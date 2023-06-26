@@ -20,6 +20,7 @@
     "test:coverage:watch": "npm run test:base -- --watchAll --config jest.coverage.js",
     "lint": "eslint . --ext .ts",
     "doc": "typedoc --out docs src",
+    "deploy-migrations": "prisma migrate deploy",
     "prepare": "husky install"
   },
   "repository": {
