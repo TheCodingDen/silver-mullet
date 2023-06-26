@@ -12,10 +12,16 @@ global.logger = logger
 import { SlashCreator, GatewayServer } from 'slash-create'
 import Discord, { GatewayDispatchEvents } from 'discord.js'
 import path from 'path'
+import { createClient } from 'redis'
 
 export const client = new Discord.Client({
   intents: []
 })
+
+export const redis = createClient({
+  url: process.env.REDIS_URL
+})
+redis.on('error', (err) => console.log('Redis Client Error', err))
 
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID as string,
@@ -43,5 +49,9 @@ void (async () => {
     )
     .registerCommandsIn(path.join(__dirname, 'commands'))
 
+  logger.debug('Connecting to Redis')
+  await redis.connect()
+  logger.debug('Connecting to Discord')
   await client.login(process.env.DISCORD_BOT_TOKEN)
-})()
+  logger.debug('Services online and operational')
+})().catch(logger.error)
