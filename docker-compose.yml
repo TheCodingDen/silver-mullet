@@ -1,0 +1,33 @@
+version: "3"
+
+name: silver-mullet
+
+services:
+  redis:
+    container_name: redis
+    image: redis:alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+  test-redis:
+    container_name: test-redis
+    image: redis:alpine
+    ports:
+      - "127.0.0.1:6380:6379"
+  db:
+    container_name: db
+    image: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: silver-mullet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+  test-db:
+    container_name: test-db
+    image: postgres
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_DB: silver-mullet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
