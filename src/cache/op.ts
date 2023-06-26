@@ -1,20 +1,26 @@
 import { Entity } from 'redis-om'
-import { Message, messageRepository } from './schema.js'
+import { CachedMessage, messageRepository } from './schema.js'
 
-export async function addMessage (message: Message): Promise<Entity> {
-  return await messageRepository.save(message)
+// TODO: Move this into config
+// 5 minutes
+const TTL = 5 * 60
+
+export async function addMessage (message: CachedMessage): Promise<Entity> {
+  const result = await messageRepository.save(message.messageId, message)
+  await messageRepository.expire(message.messageId, TTL)
+  return result
 }
 
-export async function removeMessage (message: Message): Promise<void> {
+export async function removeMessage (message: CachedMessage): Promise<void> {
   return void messageRepository.remove(message.messageId)
 }
 
-export async function fetchMessageById (messageId: string): Promise<Message> {
-  return await messageRepository.fetch(messageId) as Message
+export async function fetchMessageById (messageId: string): Promise<CachedMessage> {
+  return await messageRepository.fetch(messageId) as CachedMessage
 }
 
-export async function fetchMessagesByAuthor (authorId: string): Promise<Message[]> {
+export async function fetchMessagesByAuthor (authorId: string): Promise<CachedMessage[]> {
   return (await messageRepository.search()
     .where('authorId').equals(authorId)
-    .return.all()) as Message[]
+    .return.all()) as CachedMessage[]
 }

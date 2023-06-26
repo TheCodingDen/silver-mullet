@@ -10,18 +10,20 @@ global.logger = logger
 
 // Main app
 import { SlashCreator, GatewayServer } from 'slash-create'
-import Discord, { GatewayDispatchEvents } from 'discord.js'
+import Discord, { GatewayDispatchEvents, GatewayIntentBits } from 'discord.js'
 import path from 'path'
-import { createClient } from 'redis'
+import { onGuildMessage } from './event/guild-message.js'
+import { redis } from './cache/schema.js'
 
 export const client = new Discord.Client({
-  intents: []
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages
+  ]
 })
-
-export const redis = createClient({
-  url: process.env.REDIS_URL
-})
-redis.on('error', (err) => console.log('Redis Client Error', err))
 
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID as string,
@@ -40,6 +42,8 @@ creator.on('commandRun', (command, _, ctx) =>
 creator.on('commandRegister', command => logger.info(`Registered command ${command.commandName}`))
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error))
 
+client.on('messageCreate', async message => await onGuildMessage(message))
+
 void (async () => {
   creator
     .withServer(
@@ -49,9 +53,9 @@ void (async () => {
     )
     .registerCommandsIn(path.join(__dirname, 'commands'))
 
-  logger.debug('Connecting to Redis')
+  logger.info('Starting Redis connection process')
   await redis.connect()
-  logger.debug('Connecting to Discord')
+  logger.info('Connecting to Discord')
   await client.login(process.env.DISCORD_BOT_TOKEN)
-  logger.debug('Services online and operational')
+  logger.info('Discord online')
 })().catch(logger.error)
