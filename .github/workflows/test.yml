@@ -17,6 +17,6 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Run unit tests
-        run: npm run test:coverage
+        run: npm t -- npm run test:coverage
       - name: Build
         run: npm run build
