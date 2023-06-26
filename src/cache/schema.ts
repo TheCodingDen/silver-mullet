@@ -12,6 +12,7 @@ redis.on('ready', () => {
   initRepositories().catch(logger.error)
 })
 redis.on('end', () => logger.info('Redis disconnected'))
+
 export interface CachedMessage extends Entity {
   messageId: string
   authorId: string
