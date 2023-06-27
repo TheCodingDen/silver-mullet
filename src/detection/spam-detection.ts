@@ -4,6 +4,7 @@ import Nilsimsa from '../vendor/nilsimsa'
 // FIXME: Move to config
 const SIMILARITY_THRESHOLD = 128
 const MIN_MESSAGE_LENGTH = 10
+const MAX_SIZE_DIFF_PERCENT = 30
 const SHORT_MESSAGE_LENGTH = 15
 const SHORT_MESSAGE_SIMILARITY_THRESHOLD = 85
 const POINT_THRESHOLD = 5
@@ -84,6 +85,15 @@ export function executeAntiSpamDetection (
     .filter((c) => {
       const relevantThreshold = c.comparedContent.content.length <= SHORT_MESSAGE_LENGTH ? SHORT_MESSAGE_SIMILARITY_THRESHOLD : SIMILARITY_THRESHOLD
       const surpassesThreshold = c.similarityToPostedContent >= relevantThreshold
+
+      const originalContentLength = c.originalContent.content.length
+      const comparedContentLength = c.comparedContent.content.length
+      const sizeDiff = Math.abs(comparedContentLength - originalContentLength)
+      const sizeDiffPercentage = 100 * sizeDiff * 2 / (comparedContentLength + originalContentLength)
+
+      if (sizeDiffPercentage > MAX_SIZE_DIFF_PERCENT) {
+        return false
+      }
 
       return surpassesThreshold
     })
