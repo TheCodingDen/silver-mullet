@@ -1,4 +1,4 @@
-import { Nilsimsa } from '../../src/vendor/nilsimsa'
+import Nilsimsa from '../../src/vendor/nilsimsa'
 
 describe('Nilsimsa hash', () => {
   it('should detect perfect equality', () => {
