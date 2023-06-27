@@ -2,7 +2,7 @@ import { PermissionGroup, Prisma } from '@prisma/client'
 import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, AutocompleteContext, AutocompleteChoice } from 'slash-create'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
 import _ from 'lodash'
-import { getAssignedGuilds } from '../utils/discordUtils'
+import { assertPermissionGroupMembership, getAssignedGuilds } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
@@ -67,6 +67,10 @@ export default class ConfigCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
+    if (!await assertPermissionGroupMembership([PermissionGroup.INFRA_ADMIN], ctx)) {
+      return
+    }
+
     const { subcommands, options, guildID } = ctx
 
     switch (subcommands[0]) {
@@ -147,6 +151,7 @@ export default class ConfigCommand extends SlashCommand {
         })
 
         await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
+        break
       }
     }
   }
