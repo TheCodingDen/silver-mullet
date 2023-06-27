@@ -9,6 +9,7 @@
   "scripts": {
     "start": "nodemon lib/index.js",
     "dev": "concurrently --kill-others --prefix [{name}] --names tsc,cleaner,node \"npm:build:watch\" \"npm:cleaner\" \"npm:start\"",
+    "cleaner": "ts-cleaner --dist lib --watch",
     "sync": "slash-up sync",
     "sync:dev": "slash-up sync -e development",
     "build": "tsc",
@@ -40,6 +41,8 @@
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",
     "prisma": "^4.16.1",
+    "redis": "^4.6.7",
+    "redis-om": "^0.4.0-beta.3",
     "slash-create": "^5.13.0",
     "slash-up": "^1.3.0",
     "typescript": "^5.1.3"
