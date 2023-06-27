@@ -1,5 +1,5 @@
 import { Message } from 'discord.js'
-import { Nilsimsa } from '../vendor/nilsimsa.js'
+import Nilsimsa from '../vendor/nilsimsa.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op.js'
 
 export async function onGuildMessage (message: Message): Promise<void> {
