@@ -1,8 +1,8 @@
 import { newMessage, runDetection } from './util'
 
 describe('Quantity spam', () => {
-  const content = newMessage('content')
-  const similarContent = newMessage('contentish')
+  const content = newMessage('content--1')
+  const similarContent = newMessage('content--2')
 
   it('does not detect a single message as spam', () => {
     expect(runDetection(content, [])).toMatchSnapshot()
