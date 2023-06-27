@@ -1,7 +1,7 @@
 import { createClient } from 'redis'
 import { Entity, Repository, Schema } from 'redis-om'
 
-export const redis = createClient({
+const redis = createClient({
   url: process.env.REDIS_URL
 })
 
@@ -12,6 +12,8 @@ redis.on('ready', () => {
   initRepositories().catch(logger.error)
 })
 redis.on('end', () => logger.info('Redis disconnected'))
+
+export default redis
 
 export interface CachedMessage extends Entity {
   messageId: string
