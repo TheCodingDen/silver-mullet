@@ -36,8 +36,10 @@
   "homepage": "https://github.com/TheCodingDen/silver-mullet#readme",
   "dependencies": {
     "@prisma/client": "^4.16.1",
+    "didyoumean2": "^5.0.0",
     "discord.js": "^14.11.0",
     "dotenv-safe": "^8.2.0",
+    "lodash": "^4.17.21",
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",
     "prisma": "^4.16.1",
@@ -51,6 +53,7 @@
     "@swarthy/wait-for": "^2.1.1",
     "@types/dotenv-safe": "^8.1.2",
     "@types/jest": "^29.5.2",
+    "@types/lodash": "^4.14.195",
     "@types/node": "^20.3.1",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",

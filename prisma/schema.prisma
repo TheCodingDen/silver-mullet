@@ -21,3 +21,17 @@ model Ignore {
   type      IgnoreTarget
   snowflake String       @unique
 }
+
+enum PermissionGroup {
+  ROOT
+  INFRA_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+model PermissionGroupMapping {
+  id      String          @id @default(cuid())
+  roleID  String          @unique
+  guildID String
+  group   PermissionGroup
+}
