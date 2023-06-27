@@ -1,6 +1,6 @@
 import { Message } from 'discord.js'
-import Nilsimsa from '../vendor/nilsimsa.js'
-import { addMessage, fetchMessagesByAuthor } from '../cache/op.js'
+import Nilsimsa from '../vendor/nilsimsa'
+import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 
 export async function onGuildMessage (message: Message): Promise<void> {
   // TODO: Ignore functionality goes here

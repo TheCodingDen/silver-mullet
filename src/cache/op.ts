@@ -1,5 +1,5 @@
 import { Entity } from 'redis-om'
-import { CachedMessage, messageRepository } from './schema.js'
+import { CachedMessage, messageRepository } from './schema'
 
 // TODO: Move this into config
 // 5 minutes

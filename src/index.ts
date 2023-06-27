@@ -12,8 +12,8 @@ global.logger = logger
 import { SlashCreator, GatewayServer } from 'slash-create'
 import Discord, { GatewayDispatchEvents, GatewayIntentBits } from 'discord.js'
 import path from 'path'
-import { onGuildMessage } from './event/guild-message.js'
-import { redis } from './cache/schema.js'
+import { onGuildMessage } from './event/guild-message'
+import { redis } from './cache/schema'
 
 export const client = new Discord.Client({
   intents: [

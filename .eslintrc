@@ -29,6 +29,9 @@
     "@typescript-eslint/no-confusing-void-expression": ["error", {
       "ignoreArrowShorthand": true,
       "ignoreVoidOperator": true
+    }],
+    "import/extensions": ["error", "never", {
+      "json": "always"
     }]
-  },
+  }
 }
