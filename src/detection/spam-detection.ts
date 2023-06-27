@@ -3,12 +3,13 @@ import Nilsimsa from '../vendor/nilsimsa'
 
 // FIXME: Move to config
 const SIMILARITY_THRESHOLD = 128
+const MIN_MESSAGE_LENGTH = 10
 const SHORT_MESSAGE_LENGTH = 15
 const SHORT_MESSAGE_SIMILARITY_THRESHOLD = 85
 const POINT_THRESHOLD = 5
 const DEFAULT_POINTS_FOR_JUST_SIMILARITY_MATCHING = 1
 
-export type DetectionAction = 'ban' | 'nothing'
+export type DetectionAction = 'ban' | 'nothing' | 'empty'
 export type MatchWeights = Record<string, number>
 
 /**
@@ -60,6 +61,14 @@ export function executeAntiSpamDetection (
   cachedMessages: CachedMessage[],
   weights: MatchWeights
 ): DetectionResult {
+  if (postedContent.content.length < MIN_MESSAGE_LENGTH) {
+    return {
+      action: 'empty',
+      averageSimilarity: 0,
+      comparisons: []
+    }
+  }
+
   const comparisons: Comparison[] = []
   for (const message of cachedMessages) {
     const similarity = computeSimilarityToPostedContent(postedContent, message)
