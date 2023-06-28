@@ -86,6 +86,7 @@ export default class ConfigCommand extends SlashCommand {
         break
       default:
         logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
+        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
     }
   }
 

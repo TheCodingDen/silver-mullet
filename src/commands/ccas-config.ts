@@ -70,6 +70,7 @@ export default class CCASConfigCommand extends SlashCommand {
       }
       default:
         logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
+        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
     }
   }
 
@@ -110,8 +111,6 @@ export default class CCASConfigCommand extends SlashCommand {
   }
 
   private async get (ctx: CommandContext): Promise<void> {
-    await ctx.defer()
-
     const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
       include: {
         pointOverrides: true
@@ -157,7 +156,7 @@ export default class CCASConfigCommand extends SlashCommand {
       embeds.push(pointOverridesEmbed)
     }
 
-    await ctx.editOriginal({ embeds })
+    await ctx.send({ embeds })
   }
 
   private async set (ctx: CommandContext): Promise<void> {
