@@ -2,6 +2,7 @@ import { Message } from 'discord.js'
 import Nilsimsa from '../vendor/nilsimsa'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
+import prisma from '../clients/prisma'
 
 const MATCH_WEIGHTS = {
   nitro: 2,
@@ -9,11 +10,37 @@ const MATCH_WEIGHTS = {
 }
 
 export async function onGuildMessage (message: Message): Promise<void> {
-  if (message.author.bot) {
+  if (message.author.bot || message.channel.isDMBased() || !message.guild) {
     return
   }
 
-  // TODO: Ignore functionality goes here
+  const member = await message.guild.members.fetch(message.author.id)
+
+  // Check if the channel, its parent, the author, or any of their roles are ignored
+  const shouldIgnoreMessage = await (prisma.ignore.count({
+    where: {
+      OR: [
+        {
+          snowflake: message.channelId
+        },
+        {
+          // Just default to something that cant exist, it's the easiest way to formulate the query
+          snowflake: message.channel.parentId ?? 'nil'
+        },
+        {
+          snowflake: message.author.id
+        },
+        ...member.roles.cache.map((r) => ({
+          snowflake: r.id
+        }))
+      ]
+    }
+  })) > 0
+
+  if (shouldIgnoreMessage) {
+    logger.debug(`Ignoring message from ${message.author.id} in channel ${message.channel.id} (parent: ${message.channel.parentId})`)
+    return
+  }
 
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
