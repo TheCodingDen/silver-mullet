@@ -1,0 +1,306 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Quantity spam detects a mix of similar and identical messages as spam 1`] = `
+{
+  "action": "ban",
+  "averageSimilarity": 118.4,
+  "comparisons": [
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+  ],
+}
+`;
+
+exports[`Quantity spam detects a series of identical messages as spam 1`] = `
+{
+  "action": "ban",
+  "averageSimilarity": 128,
+  "comparisons": [
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 128,
+    },
+  ],
+}
+`;
+
+exports[`Quantity spam detects a series of similar messages as spam 1`] = `
+{
+  "action": "ban",
+  "averageSimilarity": 112,
+  "comparisons": [
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--2",
+        "hexHash": "080010542c2008c700a2100000180420063008101008007601010c8084008100",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "content--1",
+        "hexHash": "080010520c2008c6002210000018142c063008101008006200111cc084008010",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "similarityToPostedContent": 112,
+    },
+  ],
+}
+`;
+
+exports[`Quantity spam does not detect a single message as spam 1`] = `
+{
+  "action": "nothing",
+  "averageSimilarity": 0,
+  "comparisons": [],
+}
+`;

@@ -18,7 +18,7 @@ export interface CachedMessage extends Entity {
   authorId: string
   channelId: string
   content: string
-  hash: string
+  hexHash: string
 }
 
 export const messageSchema = new Schema('message', {
@@ -26,7 +26,7 @@ export const messageSchema = new Schema('message', {
   authorId: { type: 'string' },
   channelId: { type: 'string' },
   content: { type: 'text' },
-  hash: { type: 'string' }
+  hexHash: { type: 'string' }
 })
 
 export const messageRepository = new Repository(messageSchema, redis)

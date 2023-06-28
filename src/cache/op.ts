@@ -2,8 +2,8 @@ import { Entity } from 'redis-om'
 import { CachedMessage, messageRepository } from './schema'
 
 // TODO: Move this into config
-// 5 minutes
-const TTL = 5 * 60
+// 3 minutes, same as MS
+const TTL = 3 * 60
 
 export async function addMessage (message: CachedMessage): Promise<Entity> {
   const result = await messageRepository.save(message.messageId, message)
