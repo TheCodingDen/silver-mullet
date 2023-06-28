@@ -18,7 +18,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
   const authorMessages = await fetchMessagesByAuthor(message.author.id)
-  logger.debug(`Got ${authorMessages.length} messages`)
+  logger.debug(`Got ${authorMessages.length} messages from ${message.author.id}`)
 
   const messageToCache = {
     messageId: message.id,
