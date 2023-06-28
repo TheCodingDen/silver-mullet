@@ -2,6 +2,7 @@ import { CommandContext } from 'slash-create'
 import emoji from './emoji'
 import prisma from '../clients/prisma'
 import { PermissionGroup } from '@prisma/client'
+import { SnowflakeUtil } from 'discord.js'
 
 export const getAssignedGuilds = (opts?: { includeMain?: boolean }): string[] => {
   const guilds = []
@@ -19,7 +20,7 @@ export const getAssignedGuilds = (opts?: { includeMain?: boolean }): string[] =>
   return guilds
 }
 
-export async function assertPermissionGroupMembership (allowed: PermissionGroup[], ctx: CommandContext): Promise<boolean> {
+export const assertPermissionGroupMembership = async (allowed: PermissionGroup[], ctx: CommandContext): Promise<boolean> => {
   const targetGroups = await prisma.permissionGroupMapping.findMany({
     where: {
       group: {
@@ -43,5 +44,14 @@ export async function assertPermissionGroupMembership (allowed: PermissionGroup[
     return false
   } else {
     return true
+  }
+}
+
+export const isDiscordID = (id: string): boolean => {
+  try {
+    SnowflakeUtil.decode(id)
+    return true
+  } catch (err) {
+    return false
   }
 }
