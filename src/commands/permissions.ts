@@ -147,7 +147,7 @@ export default class ConfigCommand extends SlashCommand {
     }
   }
 
-  async get (ctx: CommandContext): Promise<void> {
+  private async get (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
     const { all } = options.get as { all: boolean }
 
@@ -183,7 +183,7 @@ export default class ConfigCommand extends SlashCommand {
     await ctx.send(content, { ephemeral: true })
   }
 
-  async assign (ctx: CommandContext): Promise<void> {
+  private async assign (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
     const { role: roleID, group } = options.assign as { role: string, group: PermissionGroup }
 
@@ -221,7 +221,7 @@ export default class ConfigCommand extends SlashCommand {
     await ctx.send(`${emoji.success} Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, { ephemeral: true })
   }
 
-  async remove (ctx: CommandContext): Promise<void> {
+  private async remove (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
     const { role: roleID } = options.remove as { role: string }
 

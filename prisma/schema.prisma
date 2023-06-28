@@ -35,3 +35,25 @@ model PermissionGroupMapping {
   guildID String
   group   PermissionGroup
 }
+
+model CrossChannelAntiSpamSettings {
+  version                         Int @id @default(autoincrement())
+  minMessageLength                Int
+  shortMessageLength              Int
+  shortMessageSimilarityThreshold Int
+  similarityThreshold             Int
+  maxTimeDiffMinutes              Int
+  maxSizeDiffPercentage           Int // ?
+  pointRequirement                Int
+  pointsOnMatch                   Int
+
+  pointOverrides PointOverride[] @relation("pointOverrides")
+}
+
+model PointOverride {
+  id     String @id @default(cuid())
+  word   String @unique
+  points Int
+
+  settings CrossChannelAntiSpamSettings[] @relation("pointOverrides")
+}

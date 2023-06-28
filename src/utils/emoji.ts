@@ -4,4 +4,4 @@ export default {
   warn: '\u26a0',
   error: '\u274c',
   noEntry: '\u26d4'
-}
+} as const
