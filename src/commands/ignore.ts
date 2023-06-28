@@ -180,7 +180,8 @@ export default class IgnoreCommand extends SlashCommand {
     })
 
     await ctx.send({
-      content: `Added: ID: ${entityId}, Name: ${discordEntity.name}`
+      content: `Added: ID: ${entityId}, Name: ${discordEntity.name}`,
+      ephemeral: true
     })
   }
 
@@ -217,7 +218,8 @@ export default class IgnoreCommand extends SlashCommand {
     })
 
     await ctx.send({
-      content: `Removed: CUID: ${entityId}, ID: ${discordEntity.id}, Name: ${discordEntity.name}`
+      content: `Removed: CUID: ${entityId}, ID: ${discordEntity.id}, Name: ${discordEntity.name}`,
+      ephemeral: true
     })
   }
 }
