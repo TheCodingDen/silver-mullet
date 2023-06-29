@@ -1,4 +1,4 @@
-import { CachedMessage } from '../cache/schema'
+import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
 
 // FIXME: Move to config

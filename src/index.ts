@@ -10,26 +10,17 @@ global.logger = logger
 
 // Main app
 import { SlashCreator, GatewayServer } from 'slash-create'
-import Discord, { GatewayDispatchEvents, GatewayIntentBits } from 'discord.js'
+import { GatewayDispatchEvents } from 'discord.js'
 import path from 'path'
-import { onGuildMessage } from './event/guild-message'
-import { redis } from './cache/schema'
-
-export const client = new Discord.Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildModeration,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages
-  ]
-})
+import prisma from './clients/prisma'
+import redis from './clients/redis'
+import discord from './clients/discord'
 
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID as string,
   publicKey: process.env.DISCORD_PUBLIC_KEY,
   token: process.env.DISCORD_BOT_TOKEN,
-  client
+  client: discord
 })
 
 creator.on('debug', message => logger.debug(message))
@@ -42,20 +33,26 @@ creator.on('commandRun', (command, _, ctx) =>
 creator.on('commandRegister', command => logger.info(`Registered command ${command.commandName}`))
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:`, error))
 
-client.on('messageCreate', async message => await onGuildMessage(message))
-
 void (async () => {
   creator
     .withServer(
       new GatewayServer(
-        (handler) => client.ws.on(GatewayDispatchEvents.InteractionCreate, handler)
+        (handler) => discord.ws.on(GatewayDispatchEvents.InteractionCreate, handler)
       )
     )
     .registerCommandsIn(path.join(__dirname, 'commands'))
 
-  logger.info('Starting Redis connection process')
+  logger.info('Connecting to Prisma...')
+  await prisma.$connect()
+  logger.info('Connection to Prisma established.')
+
+  logger.info('Connecting to Redis...')
   await redis.connect()
-  logger.info('Connecting to Discord')
-  await client.login(process.env.DISCORD_BOT_TOKEN)
-  logger.info('Discord online')
+  logger.info('Connection to Redis established.')
+
+  logger.info('Connecting to Discord...')
+  await discord.login(process.env.DISCORD_BOT_TOKEN)
+  logger.info('Connection to Discord established.')
+
+  logger.info('Startup process complete.')
 })().catch(logger.error)

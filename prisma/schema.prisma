@@ -21,3 +21,40 @@ model Ignore {
   type      IgnoreTarget
   snowflake String       @unique
 }
+
+enum PermissionGroup {
+  ROOT
+  INFRA_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+model PermissionGroupMapping {
+  id      String          @id @default(cuid())
+  roleID  String          @unique
+  guildID String
+  group   PermissionGroup
+}
+
+model CrossChannelAntiSpamSettings {
+  version                         Int @id @default(autoincrement())
+  minMessageLength                Int
+  shortMessageLength              Int
+  shortMessageSimilarityThreshold Int
+  similarityThreshold             Int
+  maxTimeDiffMinutes              Int
+  maxSizeDiffPercentage           Int // ?
+  pointRequirement                Int
+  pointsOnMatch                   Int
+
+  pointOverrides PointOverride[] @relation("pointOverrides")
+}
+
+model PointOverride {
+  id     String @id @default(cuid())
+  word   String @unique
+  points Int
+
+  settingsVersion Int
+  settings CrossChannelAntiSpamSettings @relation("pointOverrides", fields: [settingsVersion], references: [version])
+}

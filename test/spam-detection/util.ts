@@ -1,4 +1,4 @@
-import { CachedMessage } from '../../src/cache/schema'
+import { CachedMessage } from '../../src/clients/redis'
 import Nilsimsa from '../../src/vendor/nilsimsa'
 
 const DEFAULT_ID = '000000000000000000000'

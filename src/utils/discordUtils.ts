@@ -1,3 +1,11 @@
+import { CommandContext, MessageEmbedOptions } from 'slash-create'
+import emoji from './emoji'
+import prisma from '../clients/prisma'
+import { PermissionGroup } from '@prisma/client'
+import { SnowflakeUtil } from 'discord.js'
+import color from './color'
+import client from '../clients/discord'
+
 export const getAssignedGuilds = (opts?: { includeMain?: boolean }): string[] => {
   const guilds = []
 
@@ -13,3 +21,48 @@ export const getAssignedGuilds = (opts?: { includeMain?: boolean }): string[] =>
 
   return guilds
 }
+
+export const assertPermissionGroupMembership = async (allowed: PermissionGroup[], ctx: CommandContext): Promise<boolean> => {
+  const targetGroups = await prisma.permissionGroupMapping.findMany({
+    where: {
+      group: {
+        in: allowed
+      }
+    }
+  })
+
+  const groupRoleIDs = targetGroups.map(group => group.roleID)
+
+  if (!ctx.member) {
+    await ctx.send(`${emoji.error} Sorry, I cannot figure out who you are to authenticate you.`, { ephemeral: true })
+
+    return false
+  } else if (ctx.member.roles.filter(role => groupRoleIDs.includes(role)).length === 0) {
+    await ctx.send(
+      `${emoji.noEntry} Sorry, you are allowed to use this command. You must belong to the following permission ${allowed.length > 1 ? 'groups' : 'group'}: ${allowed.join(', ')}`,
+      { ephemeral: true }
+    )
+
+    return false
+  } else {
+    return true
+  }
+}
+
+export const isDiscordID = (id: string): boolean => {
+  try {
+    SnowflakeUtil.decode(id)
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
+export const embedBase = (): MessageEmbedOptions => ({
+  timestamp: new Date(),
+  footer: {
+    text: 'Silver Mullet',
+    icon_url: client.user?.avatarURL() ?? 'https://cdn.discordapp.com/embed/avatars/0.png'
+  },
+  color: color.blurple
+})
