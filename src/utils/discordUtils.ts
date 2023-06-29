@@ -1,8 +1,10 @@
-import { CommandContext } from 'slash-create'
+import { CommandContext, MessageEmbedOptions } from 'slash-create'
 import emoji from './emoji'
 import prisma from '../clients/prisma'
 import { PermissionGroup } from '@prisma/client'
 import { SnowflakeUtil } from 'discord.js'
+import color from './color'
+import client from '../clients/discord'
 
 export const getAssignedGuilds = (opts?: { includeMain?: boolean }): string[] => {
   const guilds = []
@@ -55,3 +57,12 @@ export const isDiscordID = (id: string): boolean => {
     return false
   }
 }
+
+export const embedBase = (): MessageEmbedOptions => ({
+  timestamp: new Date(),
+  footer: {
+    text: 'Silver Mullet',
+    icon_url: client.user?.avatarURL() ?? 'https://cdn.discordapp.com/embed/avatars/0.png'
+  },
+  color: color.blurple
+})

@@ -8,13 +8,12 @@ import {
   AutocompleteContext,
   AutocompleteChoice
 } from 'slash-create'
-import { PermissionGroup } from '@prisma/client'
+import { IgnoreTarget, PermissionGroup } from '@prisma/client'
 import _ from 'lodash'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
-import { assertPermissionGroupMembership, getAssignedGuilds } from '../utils/discordUtils'
+import { assertPermissionGroupMembership, embedBase, getAssignedGuilds } from '../utils/discordUtils'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
-import color from '../utils/color'
 import { alphabetical, humanLikely } from '../utils'
 
 export default class CCASConfigCommand extends SlashCommand {
@@ -48,6 +47,45 @@ export default class CCASConfigCommand extends SlashCommand {
               required: true
             }
           ]
+        },
+        {
+          type: CommandOptionType.SUB_COMMAND_GROUP,
+          name: 'point-overrides',
+          description: 'Edit CCAS point overrides.',
+          options: [
+            {
+              type: CommandOptionType.SUB_COMMAND,
+              name: 'set',
+              description: 'Set a CCAS point override for a given word.',
+              options: [
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'word',
+                  description: 'The word that triggers the point override.',
+                  required: true
+                },
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'points',
+                  description: 'The amount of points a message containing this word will incur.',
+                  required: true
+                }
+              ]
+            },
+            {
+              type: CommandOptionType.SUB_COMMAND,
+              name: 'remove',
+              description: 'Remove a CCAS point override.',
+              options: [
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'word',
+                  description: 'The point override to remove.',
+                  required: true
+                }
+              ]
+            }
+          ]
         }
       ]
     })
@@ -58,6 +96,8 @@ export default class CCASConfigCommand extends SlashCommand {
       return
     }
 
+    _.values(IgnoreTarget).map(async type => await prisma.ignore.findMany({ where: { type } }))
+
     const { subcommands } = ctx
 
     switch (subcommands[0]) {
@@ -66,6 +106,21 @@ export default class CCASConfigCommand extends SlashCommand {
         break
       case 'set': {
         await this.set(ctx)
+        break
+      }
+      case 'point-overrides': {
+        switch (subcommands[1]) {
+          case 'set':
+            await this.setPointOverride(ctx)
+            break
+          case 'remove':
+            await this.removePointOverride(ctx)
+            break
+          default:
+            logger.warn(`Unknown subcommand ${subcommands[1]} for command '${this.commandName}' -> ${subcommands[0]}!`)
+            await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+        }
+
         break
       }
       default:
@@ -135,8 +190,8 @@ export default class CCASConfigCommand extends SlashCommand {
       }))
 
     const settingsEmbed: MessageEmbedOptions = {
+      ...embedBase(),
       title: 'Cross-Channel Anti-Spam (CCAS) system settings',
-      color: color.blurple,
       fields
     }
 
@@ -144,9 +199,8 @@ export default class CCASConfigCommand extends SlashCommand {
 
     if (settings.pointOverrides.length > 0) {
       const pointOverridesEmbed: MessageEmbedOptions = {
+        ...embedBase(),
         title: 'CCAS point overrides',
-        timestamp: new Date(),
-        color: color.blurple,
         fields: settings.pointOverrides.map(override => ({
           name: override.word,
           value: override.points.toString()
@@ -205,6 +259,91 @@ export default class CCASConfigCommand extends SlashCommand {
       await ctx.send(`${emoji.success} CCAS setting **${setting}** set to **${value}**.`, { ephemeral: true })
     } catch (err) {
       await ctx.send(`${emoji.error} Failed to update CCAS setting ${setting}: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+    }
+  }
+
+  private async setPointOverride (ctx: CommandContext): Promise<void> {
+    const { options } = ctx
+    const { word, points } = options['point-overrides'].set as { word: string, points: string }
+
+    const parsed = parseInt(points)
+
+    if (!_.isFinite(parsed)) {
+      await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
+      return
+    }
+
+    try {
+      const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+        orderBy: {
+          version: 'desc'
+        }
+      })
+
+      if (!settings) {
+        await ctx.send(`${emoji.error} No CCAS settings found, cannot set point overrides!`, { ephemeral: true })
+        return
+      }
+
+      await prisma.pointOverride.create({
+        data: {
+          word,
+          points: parsed,
+          settings: {
+            connect: {
+              version: settings.version
+            }
+          }
+        }
+      })
+
+      logger.info(`${ctx.user.username} set CCAS point override for "${word}" to ${points} points`)
+      await ctx.send(`${emoji.success} Point override for word **${word}** set to **${points}** points.`, { ephemeral: true })
+    } catch (err) {
+      await ctx.send(`${emoji.error} Failed to set CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+    }
+  }
+
+  private async removePointOverride (ctx: CommandContext): Promise<void> {
+    const { options } = ctx
+    const { word } = options['point-overrides'].remove as { word: string }
+
+    const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+      orderBy: {
+        version: 'desc'
+      }
+    })
+
+    if (!settings) {
+      await ctx.send(`${emoji.error} No CCAS settings found, cannot remove point overrides!`, { ephemeral: true })
+      return
+    }
+
+    const override = await prisma.pointOverride.findFirst({
+      where: {
+        word,
+        settings: {
+          version: settings.version
+        }
+      }
+    })
+
+    if (!override) {
+      await ctx.send(`${emoji.error} No point override found for word **${word}** in settings version **${settings.version}**.`, { ephemeral: true })
+      return
+    }
+
+    try {
+      await prisma.pointOverride.delete({
+        where: {
+          id: override.id
+        }
+      })
+
+      logger.info(`${ctx.user.username} removed CCAS point override for "${word}"`)
+      await ctx.send(`${emoji.success} Point override for word **${word}** removed.`, { ephemeral: true })
+    } catch (err) {
+      await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
     }
   }
 }

@@ -55,5 +55,6 @@ model PointOverride {
   word   String @unique
   points Int
 
-  settings CrossChannelAntiSpamSettings[] @relation("pointOverrides")
+  settingsVersion Int
+  settings CrossChannelAntiSpamSettings @relation("pointOverrides", fields: [settingsVersion], references: [version])
 }
