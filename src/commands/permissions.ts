@@ -203,19 +203,27 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    await prisma.permissionGroupMapping.upsert({
-      where: {
-        roleID
-      },
-      create: {
-        roleID,
-        guildID,
-        group
-      },
-      update: {
-        group
-      }
-    })
+    try {
+      await prisma.permissionGroupMapping.upsert({
+        where: {
+          roleID
+        },
+        create: {
+          roleID,
+          guildID,
+          group
+        },
+        update: {
+          group
+        }
+      })
+    } catch (err) {
+      await ctx.send({
+        content: `Failed to create the database entity, permissions have not been added. (${err})`,
+        ephemeral: true
+      })
+      return
+    }
 
     const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
 
@@ -241,11 +249,19 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    await prisma.permissionGroupMapping.delete({
-      where: {
-        roleID
-      }
-    })
+    try {
+      await prisma.permissionGroupMapping.delete({
+        where: {
+          roleID
+        }
+      })
+    } catch (err) {
+      await ctx.send({
+        content: `Failed to delete the database entity, permissions have not been removed. (${err})`,
+        ephemeral: true
+      })
+      return
+    }
 
     await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
   }

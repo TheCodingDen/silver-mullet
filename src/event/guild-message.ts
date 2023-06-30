@@ -32,7 +32,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
   }
 
   // Search for each role the author has
-  for (const [,role] of member.roles.cache) {
+  for (const [, role] of member.roles.cache) {
     conditions.push({
       snowflake: role.id
     })
