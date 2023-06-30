@@ -65,6 +65,7 @@ export default class IgnoreCommand extends SlashCommand {
         const ignoredEntities = await prisma.ignore.findMany({})
 
         if (!ctx.guildID) {
+          logger.warn('Could not fulfill autocomplete request, request came from DMs')
           return []
         }
 
