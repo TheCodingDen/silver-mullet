@@ -75,6 +75,7 @@ describe('Subcommand trees', () => {
     expect(errResult).toMatchInlineSnapshot(`
 {
   "err": [Error: no command "does-not-exist" at root],
+  "humanReadableErr": "The command you tried to run (/does-not-exist) does not exist, please report this.",
   "ok": false,
 }
 `)
@@ -93,7 +94,8 @@ describe('Subcommand trees', () => {
     const errResult = (result as CommandLookupErr)
     expect(errResult).toMatchInlineSnapshot(`
 {
-  "err": [Error: no command "root" in the tree],
+  "err": [Error: no command "root.does-not-exist" in the tree],
+  "humanReadableErr": "The command you tried to run (\`/root does-not-exist\`) is not configured correctly, please report this. You can quote "missing entry" to help the devs!",
   "ok": false,
 }
 `)
