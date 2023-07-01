@@ -8,7 +8,7 @@ import {
   AutocompleteContext,
   AutocompleteChoice
 } from 'slash-create'
-import { IgnoreTarget, PermissionGroup } from '@prisma/client'
+import { AntiSpamAction, IgnoreTarget, PermissionGroup } from '@prisma/client'
 import _ from 'lodash'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
 import { assertPermissionGroupMembership, embedBase, getAssignedGuilds } from '../utils/discordUtils'
@@ -86,6 +86,46 @@ export default class CCASConfigCommand extends SlashCommand {
               ]
             }
           ]
+        },
+        {
+          type: CommandOptionType.SUB_COMMAND_GROUP,
+          name: 'actions',
+          description: 'Edit CCAS point-based actioning.',
+          options: [
+            {
+              type: CommandOptionType.SUB_COMMAND,
+              name: 'set',
+              description: 'Set a CCAS action for a given point threshold.',
+              options: [
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'points',
+                  description: 'The point threshold at which to trigger the action',
+                  required: true
+                },
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'action',
+                  description: 'The action to perform.',
+                  choices: _.keys(AntiSpamAction).map(k => ({ name: k, value: k })),
+                  required: true
+                }
+              ]
+            },
+            {
+              type: CommandOptionType.SUB_COMMAND,
+              name: 'remove',
+              description: 'Remove a CCAS action mapping.',
+              options: [
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'points',
+                  description: 'The mapping with the specified point count to remove',
+                  required: true
+                }
+              ]
+            }
+          ]
         }
       ]
     })
@@ -115,6 +155,21 @@ export default class CCASConfigCommand extends SlashCommand {
             break
           case 'remove':
             await this.removePointOverride(ctx)
+            break
+          default:
+            logger.warn(`Unknown subcommand ${subcommands[1]} for command '${this.commandName}' -> ${subcommands[0]}!`)
+            await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+        }
+
+        break
+      }
+      case 'actions': {
+        switch (subcommands[1]) {
+          case 'set':
+            await this.setActionMapping(ctx)
+            break
+          case 'remove':
+            await this.removeActionMapping(ctx)
             break
           default:
             logger.warn(`Unknown subcommand ${subcommands[1]} for command '${this.commandName}' -> ${subcommands[0]}!`)
@@ -168,7 +223,8 @@ export default class CCASConfigCommand extends SlashCommand {
   private async get (ctx: CommandContext): Promise<void> {
     const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
       include: {
-        pointOverrides: true
+        pointOverrides: true,
+        actionMappings: true
       },
       orderBy: {
         version: 'desc'
@@ -182,7 +238,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
     const fields: EmbedField[] = _
       .entries(settings)
-      .filter(([option]) => option !== 'pointOverrides') // Print point overrides separately
+      .filter(([option]) => option !== 'pointOverrides' && option !== 'actionMappings') // Print point overrides & action mappings separately
       .map(([option, value]) => ({
         name: option,
         value: value.toString(),
@@ -204,6 +260,19 @@ export default class CCASConfigCommand extends SlashCommand {
         fields: settings.pointOverrides.map(override => ({
           name: override.word,
           value: override.points.toString()
+        }))
+      }
+
+      embeds.push(pointOverridesEmbed)
+    }
+
+    if (settings.actionMappings.length > 0) {
+      const pointOverridesEmbed: MessageEmbedOptions = {
+        ...embedBase(),
+        title: 'CCAS action mappings',
+        fields: settings.actionMappings.map(override => ({
+          name: override.points.toString(),
+          value: override.action.toString()
         }))
       }
 
@@ -259,6 +328,102 @@ export default class CCASConfigCommand extends SlashCommand {
       await ctx.send(`${emoji.success} CCAS setting **${setting}** set to **${value}**.`, { ephemeral: true })
     } catch (err) {
       await ctx.send(`${emoji.error} Failed to update CCAS setting ${setting}: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+    }
+  }
+
+  private async setActionMapping (ctx: CommandContext): Promise<void> {
+    const { options } = ctx
+    const { points, action } = options.actions.set as { points: string, action: string }
+
+    const parsed = parseInt(points)
+
+    if (!_.isFinite(parsed)) {
+      await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
+      return
+    }
+
+    try {
+      const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+        orderBy: {
+          version: 'desc'
+        }
+      })
+
+      if (!settings) {
+        await ctx.send(`${emoji.error} No CCAS settings found, cannot set point overrides!`, { ephemeral: true })
+        return
+      }
+
+      await prisma.antiSpamActionMapping.create({
+        data: {
+          action: action as AntiSpamAction, // Safe, we encode the prisma enum type in the slash command arguments
+          points: parsed,
+          settings: {
+            connect: {
+              version: settings.version
+            }
+          }
+        }
+      })
+
+      logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to ${points} points`)
+      await ctx.send(`${emoji.success} Action mapping for action **${action}** set to **${points}** points.`, { ephemeral: true })
+    } catch (err) {
+      await ctx.send(`${emoji.error} Failed to add CCAS action mapping: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+    }
+  }
+
+  private async removeActionMapping (ctx: CommandContext): Promise<void> {
+    const { options } = ctx
+    const { points, action } = options.actions.set as { points: string, action: string }
+
+    const parsed = parseInt(points)
+
+    if (!_.isFinite(parsed)) {
+      await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
+      return
+    }
+
+    const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+      orderBy: {
+        version: 'desc'
+      }
+    })
+
+    if (!settings) {
+      await ctx.send(`${emoji.error} No CCAS settings found, cannot set point overrides!`, { ephemeral: true })
+      return
+    }
+
+    const mapping = await prisma.antiSpamActionMapping.findFirst({
+      where: {
+        points: parsed,
+        action: action as AntiSpamAction, // Safe, we encode the prisma enum type in the slash command arguments
+        settings: {
+          version: settings.version
+        }
+      }
+    })
+
+    if (!mapping) {
+      await ctx.send(`${emoji.error} No action mapping found for point/ban map **${points}** => **${action}** in settings version **${settings.version}**.`, { ephemeral: true })
+      return
+    }
+
+    try {
+      await prisma.antiSpamActionMapping.delete({
+        where: {
+          points_action: {
+            action: action as AntiSpamAction, // Safe, we encode the prisma enum type in the slash command arguments
+            points: parsed
+          }
+        }
+      })
+
+      logger.info(`${ctx.user.username} removed action mapping for point/ban map **${points}** => **${action}**.`)
+      await ctx.send(`${emoji.error} Removed action mapping for point/ban map **${points}** => **${action}**.`, { ephemeral: true })
+    } catch (err) {
+      await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
     }
   }
 

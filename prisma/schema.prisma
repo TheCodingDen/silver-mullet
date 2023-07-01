@@ -43,11 +43,29 @@ model CrossChannelAntiSpamSettings {
   shortMessageSimilarityThreshold Int
   similarityThreshold             Int
   maxTimeDiffMinutes              Int
-  maxSizeDiffPercentage           Int // ?
+  maxSizeDiffPercentage           Int
   pointRequirement                Int
   pointsOnMatch                   Int
 
-  pointOverrides PointOverride[] @relation("pointOverrides")
+  pointOverrides PointOverride[]         @relation("pointOverrides")
+  actionMappings AntiSpamActionMapping[]
+}
+
+enum AntiSpamAction {
+  BAN
+  KICK
+  QUEUE
+}
+
+model AntiSpamActionMapping {
+  points                              Int
+  action                              AntiSpamAction
+
+  settings        CrossChannelAntiSpamSettings? @relation(fields: [settingsVersion], references: [version])
+  settingsVersion Int?
+
+  // Point thresholds with the same actions are semantically identical, so can be used as the key
+  @@id([points, action])
 }
 
 model PointOverride {
@@ -56,5 +74,5 @@ model PointOverride {
   points Int
 
   settingsVersion Int
-  settings CrossChannelAntiSpamSettings @relation("pointOverrides", fields: [settingsVersion], references: [version])
+  settings        CrossChannelAntiSpamSettings @relation("pointOverrides", fields: [settingsVersion], references: [version])
 }

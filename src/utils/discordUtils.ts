@@ -49,6 +49,10 @@ export const assertPermissionGroupMembership = async (allowed: PermissionGroup[]
   }
 }
 
+export const messageLink = ({ guildId, channelId, messageId }: { guildId: string, channelId: string, messageId: string }): string => {
+  return `https://discord.com/channels/${guildId}/${channelId}/${messageId}`
+}
+
 export const isDiscordID = (id: string): boolean => {
   try {
     SnowflakeUtil.decode(id)
