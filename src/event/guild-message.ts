@@ -84,8 +84,8 @@ export async function onGuildMessage (message: Message): Promise<void> {
       return
     }
 
-    // Use the (up to) 10 most similar matches
-    const cacheHitsToUse = comparisons.sort((a, b) => a.similarityToPostedContent - b.similarityToPostedContent).slice(0, 10)
+    // Use the (up to) 10 most similar matches, with most similar ranked first
+    const cacheHitsToUse = comparisons.sort((a, b) => b.similarityToPostedContent - a.similarityToPostedContent).slice(0, 10)
     const averageSimilarityOfUsed = _.mean(cacheHitsToUse.map((val) => val.similarityToPostedContent))
 
     const formatCacheHit = (c: Comparison): string => {
@@ -93,9 +93,10 @@ export async function onGuildMessage (message: Message): Promise<void> {
       const content = _.truncate(c.comparedContent.content, { length: 20 }) || '<no-content>'
       const matches = c.pointsFromMatches
       const pointString = matches
-        ? `^ scored ${matches.highestRankingMatch} points from matches, with highest matching word "**${matches.highestRankingString}**" 
-          all matches were ${matches.matches.map(m => `**${m}**`).join() || '[none]'}`
-        : 'no points from matches'
+        ? `^ scored **${matches.highestRankingMatch}** points from matches, with highest matching word "**${matches.highestRankingString}**" 
+        similarity of **${c.similarityToPostedContent}** to triggering message
+        all matches were ${matches.matches.map(m => `**${m}**`).join() || '[none]'}`
+        : `no points from matches, similarity of **${c.similarityToPostedContent}** to triggering message `
 
       return `"${content}" (${link}):\n${pointString}`
     }
