@@ -2,7 +2,7 @@
 
 exports[`Quantity spam detects a mix of similar and identical messages as spam 1`] = `
 {
-  "action": "ban",
+  "action": "BAN",
   "averageSimilarity": 118.4,
   "comparisons": [
     {
@@ -96,12 +96,13 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
       "similarityToPostedContent": 112,
     },
   ],
+  "totalPoints": 5,
 }
 `;
 
 exports[`Quantity spam detects a series of identical messages as spam 1`] = `
 {
-  "action": "ban",
+  "action": "BAN",
   "averageSimilarity": 128,
   "comparisons": [
     {
@@ -195,12 +196,13 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
       "similarityToPostedContent": 128,
     },
   ],
+  "totalPoints": 5,
 }
 `;
 
 exports[`Quantity spam detects a series of similar messages as spam 1`] = `
 {
-  "action": "ban",
+  "action": "BAN",
   "averageSimilarity": 112,
   "comparisons": [
     {
@@ -294,13 +296,15 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
       "similarityToPostedContent": 112,
     },
   ],
+  "totalPoints": 5,
 }
 `;
 
 exports[`Quantity spam does not detect a single message as spam 1`] = `
 {
-  "action": "nothing",
+  "action": "NOTHING",
   "averageSimilarity": 0,
   "comparisons": [],
+  "totalPoints": 0,
 }
 `;
