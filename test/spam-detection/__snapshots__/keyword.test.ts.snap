@@ -2,7 +2,7 @@
 
 exports[`Keyword detection detects a single heavily weighted keyword as spam 1`] = `
 {
-  "action": "ban",
+  "action": "BAN",
   "averageSimilarity": 128,
   "comparisons": [
     {
@@ -30,12 +30,13 @@ exports[`Keyword detection detects a single heavily weighted keyword as spam 1`]
       "similarityToPostedContent": 128,
     },
   ],
+  "totalPoints": 5,
 }
 `;
 
 exports[`Keyword detection detects several lightly weighted keywords as spam 1`] = `
 {
-  "action": "ban",
+  "action": "BAN",
   "averageSimilarity": 128,
   "comparisons": [
     {
@@ -159,5 +160,6 @@ exports[`Keyword detection detects several lightly weighted keywords as spam 1`]
       "similarityToPostedContent": 128,
     },
   ],
+  "totalPoints": 5,
 }
 `;

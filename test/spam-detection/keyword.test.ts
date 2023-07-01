@@ -1,3 +1,4 @@
+import prisma from '../../src/clients/prisma'
 import { executeAntiSpamDetection } from '../../src/detection/spam-detection'
 import { newMessage } from './util'
 
@@ -5,16 +6,92 @@ describe('Keyword detection', () => {
   const heavyContent = newMessage('KEYWORD content content')
   const lightContent = newMessage('LIGHTWORD content content')
 
-  const weights = {
-    keyword: 5,
-    lightword: 1
-  }
-
-  it('detects a single heavily weighted keyword as spam', () => {
-    expect(executeAntiSpamDetection(heavyContent, [heavyContent], weights)).toMatchSnapshot()
+  beforeAll(async () => {
+    await prisma.$connect()
   })
 
-  it('detects several lightly weighted keywords as spam', () => {
-    expect(executeAntiSpamDetection(lightContent, [lightContent, lightContent, lightContent, lightContent, lightContent], weights)).toMatchSnapshot()
+  afterAll(async () => {
+    await prisma.$disconnect()
+  })
+
+  beforeEach(async () => {
+    await prisma.antiSpamActionMapping.deleteMany({})
+    await prisma.pointOverride.deleteMany({})
+
+    await prisma.crossChannelAntiSpamSettings.upsert({
+      create: {
+        version: 1,
+        maxSizeDiffPercentage: 30,
+        maxTimeDiffMinutes: 3,
+        minMessageLength: 10,
+        pointRequirement: 5,
+        pointsOnMatch: 1,
+        shortMessageLength: 15,
+        shortMessageSimilarityThreshold: 80,
+        similarityThreshold: 128,
+        actionMappings: {
+          create: {
+            points: 5,
+            action: 'BAN'
+          }
+        },
+        pointOverrides: {
+          createMany: {
+            data: [
+              {
+                word: 'keyword',
+                points: 5
+              },
+              {
+                word: 'lightword',
+                points: 1
+              }
+            ]
+          }
+        }
+      },
+      update: {
+        version: 1,
+        maxSizeDiffPercentage: 30,
+        maxTimeDiffMinutes: 3,
+        minMessageLength: 10,
+        pointRequirement: 5,
+        pointsOnMatch: 1,
+        shortMessageLength: 15,
+        shortMessageSimilarityThreshold: 80,
+        similarityThreshold: 128,
+        actionMappings: {
+          create: {
+            points: 5,
+            action: 'BAN'
+          }
+        },
+        pointOverrides: {
+          createMany: {
+            data: [
+              {
+                word: 'keyword',
+                points: 5
+              },
+              {
+                word: 'lightword',
+                points: 1
+              }
+            ]
+          }
+        }
+      },
+      where: {
+        version: 1
+      }
+    })
+  })
+
+  it('detects a single heavily weighted keyword as spam', async () => {
+    expect(await executeAntiSpamDetection(heavyContent, [heavyContent])).toMatchSnapshot()
+  })
+
+  it('detects several lightly weighted keywords as spam', async () => {
+    expect(await executeAntiSpamDetection(lightContent, [lightContent, lightContent, lightContent, lightContent, lightContent])).toMatchSnapshot()
   })
 })
