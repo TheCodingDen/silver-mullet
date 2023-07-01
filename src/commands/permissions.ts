@@ -7,6 +7,7 @@ import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils'
+import { validateSubcommandTree, run } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -72,22 +73,29 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    const { subcommands } = ctx
+    const result = validateSubcommandTree(['permissions', ...ctx.subcommands], {
+      permissions: {
+        get: {
+          [run]: this.get.bind(this)
+        },
+        assign: {
+          [run]: this.assign.bind(this)
+        },
+        remove: {
+          [run]: this.remove.bind(this)
+        }
+      }
+    })
 
-    switch (subcommands[0]) {
-      case 'get':
-        await this.get(ctx)
-        break
-      case 'assign':
-        await this.assign(ctx)
-        break
-      case 'remove':
-        await this.remove(ctx)
-        break
-      default:
-        logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
-        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+    if (!result.ok) {
+      await ctx.send({
+        content: `${emoji.error} ${result.humanReadableErr}`,
+        ephemeral: true
+      })
+      return
     }
+
+    await result.node[run](ctx)
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
