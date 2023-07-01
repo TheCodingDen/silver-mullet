@@ -1,16 +1,10 @@
+import { AntiSpamAction } from '@prisma/client'
+import assert from 'assert'
+import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
 
-// FIXME: Move to config
-const SIMILARITY_THRESHOLD = 128
-const MIN_MESSAGE_LENGTH = 10
-const MAX_SIZE_DIFF_PERCENT = 30
-const SHORT_MESSAGE_LENGTH = 15
-const SHORT_MESSAGE_SIMILARITY_THRESHOLD = 85
-const POINT_THRESHOLD = 5
-const DEFAULT_POINTS_FOR_JUST_SIMILARITY_MATCHING = 1
-
-export type DetectionAction = 'ban' | 'nothing' | 'empty'
+export type DetectionAction = AntiSpamAction | 'NOTHING'
 export type MatchWeights = Record<string, number>
 
 /**
@@ -30,6 +24,7 @@ export interface PointMatchResult {
 export interface DetectionResult {
   action: DetectionAction
   averageSimilarity: number
+  totalPoints: number
   comparisons: Comparison[]
 }
 
@@ -48,27 +43,45 @@ export interface Comparison {
  * Execute anti spam detection. This will check the similarity of the posted message against the previous messages (within the configured threshold)
  * with shorter messages checked against their own threshold (typically lower, as shorter messages are typically spam)
  *
- * Then, it will score the comparisons on a point scale based on the passed MatchWeights
+ * Then, it will score the comparisons on a point scale based on the configured keyword weighting
  * scoring no matches (only a similarity match) with the configured default
  *
  * The returned action is based on the points scored by the user against the point threshold
  * @param postedContent - The posted content to check against
  * @param cachedMessages - The authors post history
- * @param weights - The match weights to use in keyword checking
  * @returns The result of the detection
  */
-export function executeAntiSpamDetection (
+export async function executeAntiSpamDetection (
   postedContent: CachedMessage,
-  cachedMessages: CachedMessage[],
-  weights: MatchWeights
-): DetectionResult {
-  if (postedContent.content.length < MIN_MESSAGE_LENGTH) {
+  cachedMessages: CachedMessage[]
+): Promise<DetectionResult> {
+  const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+    orderBy: {
+      version: 'desc'
+    },
+    include: {
+      pointOverrides: true,
+      actionMappings: true
+    }
+  })
+
+  assert(settings !== null, 'cannot compute anti spam results without settings present in the database')
+
+  const { pointOverrides, actionMappings, pointsOnMatch, shortMessageLength, shortMessageSimilarityThreshold, similarityThreshold, maxSizeDiffPercentage, minMessageLength } = settings
+
+  if (postedContent.content.length < minMessageLength) {
     return {
-      action: 'empty',
+      action: 'NOTHING',
       averageSimilarity: 0,
+      totalPoints: 0,
       comparisons: []
     }
   }
+
+  const weights = pointOverrides.reduce<MatchWeights>((acc, val) => {
+    acc[val.word] = val.points
+    return acc
+  }, { })
 
   const comparisons: Comparison[] = []
   for (const message of cachedMessages) {
@@ -83,7 +96,7 @@ export function executeAntiSpamDetection (
 
   const pointResults = comparisons
     .filter((c) => {
-      const relevantThreshold = c.comparedContent.content.length <= SHORT_MESSAGE_LENGTH ? SHORT_MESSAGE_SIMILARITY_THRESHOLD : SIMILARITY_THRESHOLD
+      const relevantThreshold = c.comparedContent.content.length <= shortMessageLength ? shortMessageSimilarityThreshold : similarityThreshold
       const surpassesThreshold = c.similarityToPostedContent >= relevantThreshold
 
       const originalContentLength = c.originalContent.content.length
@@ -91,7 +104,7 @@ export function executeAntiSpamDetection (
       const sizeDiff = Math.abs(comparedContentLength - originalContentLength)
       const sizeDiffPercentage = 100 * sizeDiff * 2 / (comparedContentLength + originalContentLength)
 
-      if (sizeDiffPercentage > MAX_SIZE_DIFF_PERCENT) {
+      if (sizeDiffPercentage > maxSizeDiffPercentage) {
         return false
       }
 
@@ -100,20 +113,17 @@ export function executeAntiSpamDetection (
     .map(
       // Get the highest matching score, or the default for a pure similiarity hit
       (c) =>
-        c.pointsFromMatches?.highestRankingMatch ??
-        DEFAULT_POINTS_FOR_JUST_SIMILARITY_MATCHING
+        c.pointsFromMatches?.highestRankingMatch ?? pointsOnMatch
     )
 
   const points = pointResults.reduce((acc, val) => acc + val, 0)
-
-  let action: DetectionAction = 'nothing'
-  if (points >= POINT_THRESHOLD) {
-    action = 'ban'
-  }
+  const actions = actionMappings.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
+  const chosenAction = actions[0]?.action ?? 'NOTHING'
 
   return {
-    action,
+    action: chosenAction,
     averageSimilarity: computeAverageSimilarity(comparisons),
+    totalPoints: points,
     comparisons
   }
 }
