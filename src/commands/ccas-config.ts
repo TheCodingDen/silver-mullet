@@ -119,6 +119,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!result.ok) {
+      logger.error(result.err)
       await ctx.send({
         content: `${emoji.error} ${result.humanReadableErr}`,
         ephemeral: true

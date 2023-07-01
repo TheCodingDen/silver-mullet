@@ -88,6 +88,7 @@ export default class ConfigCommand extends SlashCommand {
     })
 
     if (!result.ok) {
+      logger.error(result.err)
       await ctx.send({
         content: `${emoji.error} ${result.humanReadableErr}`,
         ephemeral: true
