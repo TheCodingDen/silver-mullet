@@ -34,11 +34,10 @@ export default class ConfigCommand extends SlashCommand {
           description: 'Assign a role to a permission group.',
           options: [
             {
-              type: CommandOptionType.STRING,
+              type: CommandOptionType.ROLE,
               name: 'role',
               description: 'The role to assign a permission group to.',
-              required: true,
-              autocomplete: true
+              required: true
             },
             {
               type: CommandOptionType.STRING,
@@ -55,11 +54,10 @@ export default class ConfigCommand extends SlashCommand {
           description: 'Remove a role from a permission group.',
           options: [
             {
-              type: CommandOptionType.STRING,
+              type: CommandOptionType.ROLE,
               name: 'role',
               description: 'The role to remove from its permission group.',
-              required: true,
-              autocomplete: true
+              required: true
             }
           ]
         }
@@ -91,37 +89,9 @@ export default class ConfigCommand extends SlashCommand {
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const { focused, guildID, options } = ctx
+    const { focused, options } = ctx
 
     switch (focused) {
-      case 'role': {
-        if (!guildID) {
-          logger.warn('Cannot determine guild ID in order to list roles for permissions assignment')
-          return []
-        }
-
-        const guild = client.guilds.cache.get(guildID)
-
-        if (!guild) {
-          logger.warn(`Guild ${guildID} is missing from cache, cannot list roles for permissions assignment`)
-          return []
-        }
-
-        const roles = Array.from(guild.roles.cache.values())
-
-        const input = (options?.assign?.role ?? options?.remove?.role) as string
-
-        const likely = didYouMean(
-          input,
-          roles.map(role => role.name),
-          { returnType: ReturnTypeEnums.ALL_MATCHES }
-        )
-
-        return roles
-          .filter(role => humanLikely(input, likely, role.name))
-          .map(role => ({ name: role.name, value: role.id }))
-          .sort(alphabetical)
-      }
       case 'group': {
         const groups = [
           { name: 'Root', value: PermissionGroup.ROOT },
