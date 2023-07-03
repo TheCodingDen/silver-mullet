@@ -33,8 +33,8 @@ export function validateSubcommandTree ([rootKey, ...subcommands]: string[], com
   if (!commandTree[rootKey]) {
     return {
       ok: false,
-      err: new Error(`no command "${rootKey}" at root`),
-      humanReadableErr: `The command you tried to run (/${rootKey}) does not exist, please report this.`
+      err: new Error(`No command with key "${rootKey}" at root`),
+      humanReadableErr: `The command you tried to run (/${rootKey}) does not exist.`
     }
   }
 
@@ -49,7 +49,7 @@ export function validateSubcommandTree ([rootKey, ...subcommands]: string[], com
     if (!child) {
       return {
         ok: false,
-        err: new Error(`no command "${parts.join('.')}" in the tree`),
+        err: new Error(`No command "${parts.join('.')}" in the tree`),
         humanReadableErr: `The command you tried to run (\`/${parts.join(' ')}\`) is not configured correctly, please report this. You can quote "missing entry" to help the devs!`
       }
     }
@@ -61,7 +61,7 @@ export function validateSubcommandTree ([rootKey, ...subcommands]: string[], com
   if (runner === undefined) {
     return {
       ok: false,
-      err: new Error(`attempted command execution with non existent runner ${parts.join('.')}`),
+      err: new Error(`Attempted command execution with non-existent runner ${parts.join('.')}`),
       humanReadableErr: `The command you tried to run (\`/${parts.join(' ')}\`) is not configured correctly, please report this. You can quote "missing runner" to help the devs!`
     }
   }
