@@ -122,7 +122,12 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
             : ''
           }
         `,
-        color: color.blurple
+        color: color.blurple,
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: 'Silver Mullet',
+          icon_url: message.client.user?.avatarURL() ?? 'https://cdn.discordapp.com/embed/avatars/0.png'
+        }
       }]
     })
   }
