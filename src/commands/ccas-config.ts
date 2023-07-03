@@ -119,9 +119,10 @@ export default class CCASConfigCommand extends SlashCommand {
               options: [
                 {
                   type: CommandOptionType.STRING,
-                  name: 'points',
-                  description: 'The mapping with the specified point count to remove.',
-                  required: true
+                  name: 'mapping',
+                  description: 'The mapping to remove.',
+                  required: true,
+                  autocomplete: true
                 }
               ]
             }
@@ -212,6 +213,22 @@ export default class CCASConfigCommand extends SlashCommand {
         return validOptions
           .filter(option => humanLikely(input, likely, option))
           .map(option => ({ name: option, value: option }))
+          .sort(alphabetical)
+      }
+      case 'mapping': {
+        const mappings = await prisma.antiSpamActionMapping.findMany({})
+        const validOptions = mappings.map(m => `${m.points} - ${m.action}`)
+        const input = options?.actions?.remove?.mapping
+
+        const likely = didYouMean(
+          input,
+          validOptions,
+          { returnType: ReturnTypeEnums.ALL_MATCHES }
+        )
+
+        return mappings
+          .filter(option => humanLikely(input, likely, `${option.points} - ${option.action}`))
+          .map(option => ({ name: `${option.points} - ${option.action}`, value: option.id }))
           .sort(alphabetical)
       }
       default:
@@ -380,19 +397,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
   private async removeActionMapping (ctx: CommandContext): Promise<void> {
     const { options } = ctx
-    const { points, action } = options.actions.remove as { points: string, action: string }
-
-    const parsed = parseInt(points)
-
-    if (!_.isFinite(parsed)) {
-      await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
-      return
-    }
-
-    if (!isAntiSpamAction(action)) {
-      await ctx.send(`${emoji.error} Provided action was not in the enum, Discord must have screwed up.`, { ephemeral: true })
-      return
-    }
+    const { mapping: entityId } = options.actions.remove as { mapping: string }
 
     const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
       orderBy: {
@@ -407,8 +412,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
     const mapping = await prisma.antiSpamActionMapping.findFirst({
       where: {
-        points: parsed,
-        action,
+        id: entityId,
         settings: {
           version: settings.version
         }
@@ -416,17 +420,16 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!mapping) {
-      await ctx.send(`${emoji.error} No data found for mapping **${points}** => **${action}** in settings version **${settings.version}**.`, { ephemeral: true })
+      await ctx.send(`${emoji.error} No data found for mapping, Discord must haved screwed up, or our autocomplete implementation is bugged.`, { ephemeral: true })
       return
     }
+
+    const { points, action } = mapping
 
     try {
       await prisma.antiSpamActionMapping.delete({
         where: {
-          points_action: {
-            action, // Safe, we encode the prisma enum type in the slash command arguments
-            points: parsed
-          }
+          id: mapping.id
         }
       })
 
