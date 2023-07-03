@@ -219,7 +219,7 @@ export default class ConfigCommand extends SlashCommand {
       })
     } catch (err) {
       await ctx.send({
-        content: `Failed to create the database entity, permissions have not been added. (${err})`,
+        content: `${emoji.error} Permission group assignment failed: ${err instanceof Error ? err.message : err}`,
         ephemeral: true
       })
       return
@@ -257,7 +257,7 @@ export default class ConfigCommand extends SlashCommand {
       })
     } catch (err) {
       await ctx.send({
-        content: `Failed to delete the database entity, permissions have not been removed. (${err})`,
+        content: `Failed to remove permission group assignment: ${err instanceof Error ? err.message : err}`,
         ephemeral: true
       })
       return

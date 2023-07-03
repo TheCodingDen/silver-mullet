@@ -19,13 +19,13 @@ export default class IgnoreCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
     super(creator, {
       name: 'ignore',
-      description: 'Manage channels, categories and roles ignored by the bot',
+      description: 'Manage channels, categories and roles ignored by the bot. Infra admins only.',
       guildIDs: getAssignedGuilds({ includeMain: true }),
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'add',
-          description: 'Add a channel, role or user to the ignore list. Infra admins only.',
+          description: 'Add a channel, role or user to the ignore list.',
           options: [
             {
               type: CommandOptionType.CHANNEL,
@@ -191,7 +191,7 @@ export default class IgnoreCommand extends SlashCommand {
     const mention = discordEntity instanceof Role ? `<@&${entityId}>` : `<#${entityId}>`
 
     await ctx.send({
-      content: `${emoji.success} Added: ${discordEntity.name} (${mention}, ${entityId}) to the ignore list`,
+      content: `${emoji.success} Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list`,
       ephemeral: true
     })
 
@@ -228,7 +228,7 @@ export default class IgnoreCommand extends SlashCommand {
 
     if (discordEntity === null) {
       await ctx.send({
-        content: `${emoji.error} Could not resolve ${found.snowflake}? Is Discord experiencing issues? This should never happen, please report.`,
+        content: `${emoji.error} Could not resolve ${found.snowflake}. Is Discord experiencing issues?`,
         ephemeral: true
       })
       return
@@ -242,7 +242,7 @@ export default class IgnoreCommand extends SlashCommand {
       })
     } catch (err) {
       await ctx.send({
-        content: `Failed to delete the database entity, target is still ignored. (${err})`,
+        content: `Failed to remove ignore, target is still ignored: ${err instanceof Error ? err.message : err}`,
         ephemeral: true
       })
       return
