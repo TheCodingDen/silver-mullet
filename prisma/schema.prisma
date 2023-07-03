@@ -58,14 +58,13 @@ enum AntiSpamAction {
 }
 
 model AntiSpamActionMapping {
+  id      String          @id @default(cuid())
+
   points Int
   action AntiSpamAction
 
   settings        CrossChannelAntiSpamSettings? @relation("actionMappings", fields: [settingsVersion], references: [version], onDelete: Cascade)
   settingsVersion Int?
-
-  // Point thresholds with the same actions are semantically identical, so can be used as the key
-  @@id([points, action])
 }
 
 model PointOverride {

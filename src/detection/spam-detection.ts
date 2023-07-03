@@ -1,5 +1,4 @@
 import { AntiSpamAction } from '@prisma/client'
-import assert from 'assert'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
@@ -65,7 +64,9 @@ export async function executeAntiSpamDetection (
     }
   })
 
-  assert(settings !== null, 'cannot compute anti spam results without settings present in the database')
+  if (settings === null) {
+    throw new Error('cannot compute anti spam results without settings present in the database')
+  }
 
   const { pointOverrides, actionMappings, pointsOnMatch, shortMessageLength, shortMessageSimilarityThreshold, similarityThreshold, maxSizeDiffPercentage, minMessageLength } = settings
 
