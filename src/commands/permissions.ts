@@ -7,6 +7,7 @@ import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils'
+import { validateSubcommandTree, run } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -34,11 +35,10 @@ export default class ConfigCommand extends SlashCommand {
           description: 'Assign a role to a permission group.',
           options: [
             {
-              type: CommandOptionType.STRING,
+              type: CommandOptionType.ROLE,
               name: 'role',
               description: 'The role to assign a permission group to.',
-              required: true,
-              autocomplete: true
+              required: true
             },
             {
               type: CommandOptionType.STRING,
@@ -55,11 +55,10 @@ export default class ConfigCommand extends SlashCommand {
           description: 'Remove a role from a permission group.',
           options: [
             {
-              type: CommandOptionType.STRING,
+              type: CommandOptionType.ROLE,
               name: 'role',
               description: 'The role to remove from its permission group.',
-              required: true,
-              autocomplete: true
+              required: true
             }
           ]
         }
@@ -72,56 +71,36 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    const { subcommands } = ctx
+    const result = validateSubcommandTree(['permissions', ...ctx.subcommands], {
+      permissions: {
+        get: {
+          [run]: this.get.bind(this)
+        },
+        assign: {
+          [run]: this.assign.bind(this)
+        },
+        remove: {
+          [run]: this.remove.bind(this)
+        }
+      }
+    })
 
-    switch (subcommands[0]) {
-      case 'get':
-        await this.get(ctx)
-        break
-      case 'assign':
-        await this.assign(ctx)
-        break
-      case 'remove':
-        await this.remove(ctx)
-        break
-      default:
-        logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
-        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+    if (!result.ok) {
+      logger.error(result.err)
+      await ctx.send({
+        content: `${emoji.error} ${result.humanReadableErr}`,
+        ephemeral: true
+      })
+      return
     }
+
+    await result.node[run](ctx)
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const { focused, guildID, options } = ctx
+    const { focused, options } = ctx
 
     switch (focused) {
-      case 'role': {
-        if (!guildID) {
-          logger.warn('Cannot determine guild ID in order to list roles for permissions assignment')
-          return []
-        }
-
-        const guild = client.guilds.cache.get(guildID)
-
-        if (!guild) {
-          logger.warn(`Guild ${guildID} is missing from cache, cannot list roles for permissions assignment`)
-          return []
-        }
-
-        const roles = Array.from(guild.roles.cache.values())
-
-        const input = (options?.assign?.role ?? options?.remove?.role) as string
-
-        const likely = didYouMean(
-          input,
-          roles.map(role => role.name),
-          { returnType: ReturnTypeEnums.ALL_MATCHES }
-        )
-
-        return roles
-          .filter(role => humanLikely(input, likely, role.name))
-          .map(role => ({ name: role.name, value: role.id }))
-          .sort(alphabetical)
-      }
       case 'group': {
         const groups = [
           { name: 'Root', value: PermissionGroup.ROOT },
@@ -203,19 +182,27 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    await prisma.permissionGroupMapping.upsert({
-      where: {
-        roleID
-      },
-      create: {
-        roleID,
-        guildID,
-        group
-      },
-      update: {
-        group
-      }
-    })
+    try {
+      await prisma.permissionGroupMapping.upsert({
+        where: {
+          roleID
+        },
+        create: {
+          roleID,
+          guildID,
+          group
+        },
+        update: {
+          group
+        }
+      })
+    } catch (err) {
+      await ctx.send({
+        content: `${emoji.error} Permission group assignment failed: ${err instanceof Error ? err.message : err}`,
+        ephemeral: true
+      })
+      return
+    }
 
     const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
 
@@ -241,11 +228,19 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    await prisma.permissionGroupMapping.delete({
-      where: {
-        roleID
-      }
-    })
+    try {
+      await prisma.permissionGroupMapping.delete({
+        where: {
+          roleID
+        }
+      })
+    } catch (err) {
+      await ctx.send({
+        content: `Failed to remove permission group assignment: ${err instanceof Error ? err.message : err}`,
+        ephemeral: true
+      })
+      return
+    }
 
     await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
   }

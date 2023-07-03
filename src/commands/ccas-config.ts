@@ -15,6 +15,7 @@ import { assertPermissionGroupMembership, embedBase, getAssignedGuilds } from '.
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils'
+import { validateSubcommandTree, run } from '../utils/commands'
 
 export default class CCASConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -139,50 +140,43 @@ export default class CCASConfigCommand extends SlashCommand {
 
     _.values(IgnoreTarget).map(async type => await prisma.ignore.findMany({ where: { type } }))
 
-    const { subcommands } = ctx
-
-    switch (subcommands[0]) {
-      case 'get':
-        await this.get(ctx)
-        break
-      case 'set': {
-        await this.set(ctx)
-        break
-      }
-      case 'point-overrides': {
-        switch (subcommands[1]) {
-          case 'set':
-            await this.setPointOverride(ctx)
-            break
-          case 'remove':
-            await this.removePointOverride(ctx)
-            break
-          default:
-            logger.warn(`Unknown subcommand ${subcommands[1]} for command '${this.commandName}' -> ${subcommands[0]}!`)
-            await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+    const result = validateSubcommandTree(['ccas-config', ...ctx.subcommands], {
+      'ccas-config': {
+        get: {
+          [run]: this.get.bind(this)
+        },
+        set: {
+          [run]: this.set.bind(this)
+        },
+        'point-overrides': {
+          set: {
+            [run]: this.setPointOverride.bind(this)
+          },
+          remove: {
+            [run]: this.removePointOverride.bind(this)
+          }
+        },
+        actions: {
+          set: {
+            [run]: this.setActionMapping.bind(this)
+          },
+          remove: {
+            [run]: this.removeActionMapping.bind(this)
+          }
         }
-
-        break
       }
-      case 'actions': {
-        switch (subcommands[1]) {
-          case 'set':
-            await this.setActionMapping(ctx)
-            break
-          case 'remove':
-            await this.removeActionMapping(ctx)
-            break
-          default:
-            logger.warn(`Unknown subcommand ${subcommands[1]} for command '${this.commandName}' -> ${subcommands[0]}!`)
-            await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
-        }
+    })
 
-        break
-      }
-      default:
-        logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
-        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+    if (!result.ok) {
+      logger.error(result.err)
+      await ctx.send({
+        content: `${emoji.error} ${result.humanReadableErr}`,
+        ephemeral: true
+      })
+      return
     }
+
+    await result.node[run](ctx)
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
