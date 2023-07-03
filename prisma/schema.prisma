@@ -48,7 +48,7 @@ model CrossChannelAntiSpamSettings {
   pointsOnMatch                   Int
 
   pointOverrides PointOverride[]         @relation("pointOverrides")
-  actionMappings AntiSpamActionMapping[]
+  actionMappings AntiSpamActionMapping[] @relation("actionMappings")
 }
 
 enum AntiSpamAction {
@@ -61,7 +61,7 @@ model AntiSpamActionMapping {
   points Int
   action AntiSpamAction
 
-  settings        CrossChannelAntiSpamSettings? @relation(fields: [settingsVersion], references: [version], onDelete: Cascade)
+  settings        CrossChannelAntiSpamSettings? @relation("actionMappings", fields: [settingsVersion], references: [version], onDelete: Cascade)
   settingsVersion Int?
 
   // Point thresholds with the same actions are semantically identical, so can be used as the key

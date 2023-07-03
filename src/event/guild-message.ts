@@ -58,7 +58,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
       try {
         if (process.env.NODE_ENV !== 'production') {
           await message.reply({
-            content: `${action}'d you for this`
+            content: `Action taken: ${action}`
           })
         } else {
           await actionFn(member)
@@ -75,12 +75,12 @@ export async function onGuildMessage (message: Message): Promise<void> {
     assert(logChannelId !== undefined, 'log channel was not set in the environment')
 
     const logChannel = await message.guild.channels.fetch(logChannelId)
-    if (logChannel === null) {
-      logger.error(`log channel (${logChannelId}) cannot be found, does it exist in this guild (${message.guild.name})?`)
+    if (!logChannel) {
+      logger.error(`Log channel (${logChannelId}) cannot be found, does it exist in guild ${message.guild.id} (${message.guild.name})?`)
       return
     }
     if (!logChannel.isTextBased() || logChannel.isDMBased()) {
-      logger.error(`log channel (${logChannelId}) is not text based or is a DM`)
+      logger.error(`Log channel ${logChannelId} is not text based or is a DM`)
       return
     }
 
