@@ -380,7 +380,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
   private async removeActionMapping (ctx: CommandContext): Promise<void> {
     const { options } = ctx
-    const { points, action } = options.actions.remoe as { points: string, action: string }
+    const { points, action } = options.actions.remove as { points: string, action: string }
 
     const parsed = parseInt(points)
 
@@ -524,5 +524,5 @@ export default class CCASConfigCommand extends SlashCommand {
 }
 
 function isAntiSpamAction (value: string): value is AntiSpamAction {
-  return _.keys(AntiSpamAction).find(s => value === s) !== undefined
+  return value in AntiSpamAction
 }
