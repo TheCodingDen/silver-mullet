@@ -100,7 +100,7 @@ export default class CCASConfigCommand extends SlashCommand {
                 {
                   type: CommandOptionType.STRING,
                   name: 'points',
-                  description: 'The point threshold at which to trigger the action',
+                  description: 'The point threshold at which to trigger the action.',
                   required: true
                 },
                 {
@@ -120,7 +120,7 @@ export default class CCASConfigCommand extends SlashCommand {
                 {
                   type: CommandOptionType.STRING,
                   name: 'points',
-                  description: 'The mapping with the specified point count to remove',
+                  description: 'The mapping with the specified point count to remove.',
                   required: true
                 }
               ]
@@ -342,6 +342,11 @@ export default class CCASConfigCommand extends SlashCommand {
       return
     }
 
+    if (!isAntiSpamAction(action)) {
+      await ctx.send(`${emoji.error} Provided action was not in the enum, Discord must have screwed up.`, { ephemeral: true })
+      return
+    }
+
     try {
       const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
         orderBy: {
@@ -350,13 +355,13 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       if (!settings) {
-        await ctx.send(`${emoji.error} No CCAS settings found, cannot set point overrides!`, { ephemeral: true })
+        await ctx.send(`${emoji.error} No CCAS settings found, cannot set action mapping!`, { ephemeral: true })
         return
       }
 
       await prisma.antiSpamActionMapping.create({
         data: {
-          action: action as AntiSpamAction, // Safe, we encode the prisma enum type in the slash command arguments
+          action,
           points: parsed,
           settings: {
             connect: {
@@ -366,8 +371,8 @@ export default class CCASConfigCommand extends SlashCommand {
         }
       })
 
-      logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to ${points} points`)
-      await ctx.send(`${emoji.success} Action mapping for action **${action}** set to **${points}** points.`, { ephemeral: true })
+      logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to happen at ${points} points`)
+      await ctx.send(`${emoji.success} Will **${action}** when user accumulates **${points}** points.`, { ephemeral: true })
     } catch (err) {
       await ctx.send(`${emoji.error} Failed to add CCAS action mapping: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
     }
@@ -375,12 +380,17 @@ export default class CCASConfigCommand extends SlashCommand {
 
   private async removeActionMapping (ctx: CommandContext): Promise<void> {
     const { options } = ctx
-    const { points, action } = options.actions.set as { points: string, action: string }
+    const { points, action } = options.actions.remoe as { points: string, action: string }
 
     const parsed = parseInt(points)
 
     if (!_.isFinite(parsed)) {
       await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
+      return
+    }
+
+    if (!isAntiSpamAction(action)) {
+      await ctx.send(`${emoji.error} Provided action was not in the enum, Discord must have screwed up.`, { ephemeral: true })
       return
     }
 
@@ -391,14 +401,14 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!settings) {
-      await ctx.send(`${emoji.error} No CCAS settings found, cannot set point overrides!`, { ephemeral: true })
+      await ctx.send(`${emoji.error} No CCAS settings found, cannot set action mapping!`, { ephemeral: true })
       return
     }
 
     const mapping = await prisma.antiSpamActionMapping.findFirst({
       where: {
         points: parsed,
-        action: action as AntiSpamAction, // Safe, we encode the prisma enum type in the slash command arguments
+        action,
         settings: {
           version: settings.version
         }
@@ -406,7 +416,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!mapping) {
-      await ctx.send(`${emoji.error} No action mapping found for point/ban map **${points}** => **${action}** in settings version **${settings.version}**.`, { ephemeral: true })
+      await ctx.send(`${emoji.error} No data found for mapping **${points}** => **${action}** in settings version **${settings.version}**.`, { ephemeral: true })
       return
     }
 
@@ -414,16 +424,16 @@ export default class CCASConfigCommand extends SlashCommand {
       await prisma.antiSpamActionMapping.delete({
         where: {
           points_action: {
-            action: action as AntiSpamAction, // Safe, we encode the prisma enum type in the slash command arguments
+            action, // Safe, we encode the prisma enum type in the slash command arguments
             points: parsed
           }
         }
       })
 
-      logger.info(`${ctx.user.username} removed action mapping for point/ban map **${points}** => **${action}**.`)
-      await ctx.send(`${emoji.error} Removed action mapping for point/ban map **${points}** => **${action}**.`, { ephemeral: true })
+      logger.info(`${ctx.user.username} removed mapping **${points}** => **${action}**.`)
+      await ctx.send(`${emoji.error} Removed mapping **${points}** => **${action}**.`, { ephemeral: true })
     } catch (err) {
-      await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+      await ctx.send(`${emoji.error} Failed to remove CCAS: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
     }
   }
 
@@ -511,4 +521,8 @@ export default class CCASConfigCommand extends SlashCommand {
       await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
     }
   }
+}
+
+function isAntiSpamAction (value: string): value is AntiSpamAction {
+  return _.keys(AntiSpamAction).find(s => value === s) !== undefined
 }
