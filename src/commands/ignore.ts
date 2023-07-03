@@ -133,7 +133,7 @@ export default class IgnoreCommand extends SlashCommand {
   private async add (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.`)
+      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these ignored settings are being modified.`)
       return
     }
 
@@ -165,7 +165,7 @@ export default class IgnoreCommand extends SlashCommand {
       }
     }
 
-    if (discordEntity === null || entityType === null) {
+    if (!discordEntity || !entityType) {
       await ctx.send({
         content: `${emoji.error} Could not resolve ${entityId}. It may not exist or Discord may be having issues.`,
         ephemeral: true
@@ -190,18 +190,18 @@ export default class IgnoreCommand extends SlashCommand {
 
     const mention = discordEntity instanceof Role ? `<@&${entityId}>` : `<#${entityId}>`
 
+    logger.info(`${ctx.user.username} added ignore with name: ${discordEntity.name} (${discordEntity.id})`)
+
     await ctx.send({
       content: `${emoji.success} Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list`,
       ephemeral: true
     })
-
-    logger.info(`${ctx.user.username} added ignore with name: ${discordEntity.name} (${discordEntity.id})`)
   }
 
   private async remove (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.`)
+      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these ignored settings are being modified.`)
       return
     }
 
@@ -218,7 +218,7 @@ export default class IgnoreCommand extends SlashCommand {
     if (!found) {
       await ctx.send({
         // Should never happen
-        content: `${emoji.error} CUID ${entityId} could not be located in the database, this means Discord gave us garbage, or the autocomplete implementation is bugged, please report this.`,
+        content: `${emoji.error} That entity could not found. This means either Discord gave us garbage, or the autocomplete implementation is bugged.`,
         ephemeral: true
       })
       return
@@ -226,7 +226,7 @@ export default class IgnoreCommand extends SlashCommand {
 
     const discordEntity = await fetchers[found.type](found.snowflake, guild)
 
-    if (discordEntity === null) {
+    if (!discordEntity) {
       await ctx.send({
         content: `${emoji.error} Could not resolve ${found.snowflake}. Is Discord experiencing issues?`,
         ephemeral: true
