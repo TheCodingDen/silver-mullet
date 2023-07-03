@@ -28,7 +28,7 @@ creator.on('warn', message => logger.warn(message))
 creator.on('error', error => logger.error(error))
 creator.on('synced', () => logger.info('Commands synced!'))
 creator.on('commandRun', (command, _, ctx) =>
-  logger.info(`${ctx.user.username}#${ctx.user.discriminator} (${ctx.user.id}) ran command ${command.commandName}`)
+  logger.info(`${ctx.user.username} (${ctx.user.id}) ran command ${command.commandName}`)
 )
 creator.on('commandRegister', command => logger.info(`Registered command ${command.commandName}`))
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:\n${error}`))
