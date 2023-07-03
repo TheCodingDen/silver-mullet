@@ -182,7 +182,7 @@ export default class IgnoreCommand extends SlashCommand {
       })
     } catch (err) {
       await ctx.send({
-        content: `Failed to create the database entity, target has not been ignored. (${err})`,
+        content: `Failed to create ignore, target is still not ignored: ${err instanceof Error ? err.message : err}`,
         ephemeral: true
       })
       return
