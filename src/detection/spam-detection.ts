@@ -1,4 +1,4 @@
-import { AntiSpamAction } from '@prisma/client'
+import { AntiSpamAction, CrossChannelAntiSpamSettings } from '@prisma/client'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
@@ -14,6 +14,11 @@ export interface PointMatchResult {
   matches: string[]
   highestRankingString: string
   highestRankingMatch: number
+}
+
+export interface SimilarityMatchResult {
+  pointsGained: number
+  thresholdBroken: number
 }
 
 /**
@@ -35,6 +40,7 @@ export interface Comparison {
   similarityToPostedContent: number
   comparedContent: CachedMessage
   originalContent: CachedMessage
+  pointsFromSimilarity: SimilarityMatchResult | undefined
   pointsFromMatches: PointMatchResult | undefined
 }
 
@@ -68,7 +74,7 @@ export async function executeAntiSpamDetection (
     throw new Error('cannot compute anti spam results without settings present in the database')
   }
 
-  const { pointOverrides, actionMappings, pointsOnMatch, shortMessageLength, shortMessageSimilarityThreshold, similarityThreshold, maxSizeDiffPercentage, minMessageLength } = settings
+  const { pointOverrides, actionMappings, maxSizeDiffPercentage, minMessageLength } = settings
 
   if (postedContent.content.length < minMessageLength) {
     return {
@@ -86,35 +92,44 @@ export async function executeAntiSpamDetection (
 
   const comparisons: Comparison[] = []
   for (const message of cachedMessages) {
+    // Require messages to be longer than the minimum
+    // If they are not, do not consider them at all
+    if (postedContent.content.length < minMessageLength) {
+      continue
+    }
+
     const similarity = computeSimilarityToPostedContent(postedContent, message)
+
     comparisons.push({
-      similarityToPostedContent: similarity,
       comparedContent: message,
       originalContent: postedContent,
-      pointsFromMatches: computePointMatches(message.content, weights)
+      similarityToPostedContent: similarity,
+      pointsFromMatches: computePointMatches(message.content, weights),
+      pointsFromSimilarity: computeSimilarityPoints(message, similarity, settings)
     })
   }
 
-  const pointResults = comparisons
+  const filteredComparisons = comparisons
     .filter((c) => {
-      const relevantThreshold = c.comparedContent.content.length <= shortMessageLength ? shortMessageSimilarityThreshold : similarityThreshold
-      const surpassesThreshold = c.similarityToPostedContent >= relevantThreshold
-
       const originalContentLength = c.originalContent.content.length
       const comparedContentLength = c.comparedContent.content.length
       const sizeDiff = Math.abs(comparedContentLength - originalContentLength)
       const sizeDiffPercentage = 100 * sizeDiff * 2 / (comparedContentLength + originalContentLength)
 
+      // Require messages be within maxSizeDiffPercentage of each other in size
       if (sizeDiffPercentage > maxSizeDiffPercentage) {
         return false
       }
 
-      return surpassesThreshold
+      return c.pointsFromSimilarity !== undefined
     })
+
+  // Based on the filtered comparisons, compute the resulting point score for the user
+  const pointResults = filteredComparisons
     .map(
-      // Get the highest matching score, or the default for a pure similiarity hit
+      // Get the highest matching score, or the points gained from a similarity hit, or 0 if there's no points for the message
       (c) =>
-        c.pointsFromMatches?.highestRankingMatch ?? pointsOnMatch
+        c.pointsFromMatches?.highestRankingMatch ?? c.pointsFromSimilarity?.pointsGained ?? 0
     )
 
   const points = pointResults.reduce((acc, val) => acc + val, 0)
@@ -125,7 +140,7 @@ export async function executeAntiSpamDetection (
     action: chosenAction,
     averageSimilarity: computeAverageSimilarity(comparisons),
     totalPoints: points,
-    comparisons
+    comparisons: filteredComparisons
   }
 }
 
@@ -138,6 +153,26 @@ function computeSimilarityToPostedContent (
     singleCachedMessage.hexHash,
     'hex'
   )
+}
+
+function computeSimilarityPoints (
+  comparedContent: CachedMessage,
+  similarity: number,
+  settings: CrossChannelAntiSpamSettings
+): SimilarityMatchResult | undefined {
+  const { shortMessageLength, shortMessageSimilarityThreshold, similarityThreshold, pointsOnMatch } = settings
+
+  const relevantThreshold = comparedContent.content.length <= shortMessageLength ? shortMessageSimilarityThreshold : similarityThreshold
+  const surpassesThreshold = similarity >= relevantThreshold
+
+  if (!surpassesThreshold) {
+    return undefined
+  }
+
+  return {
+    pointsGained: pointsOnMatch,
+    thresholdBroken: relevantThreshold
+  }
 }
 
 function computePointMatches (

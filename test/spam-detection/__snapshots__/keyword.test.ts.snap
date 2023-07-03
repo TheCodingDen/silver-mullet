@@ -27,6 +27,10 @@ exports[`Keyword detection detects a single heavily weighted keyword as spam 1`]
           "keyword",
         ],
       },
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 128,
+      },
       "similarityToPostedContent": 128,
     },
   ],
@@ -61,29 +65,9 @@ exports[`Keyword detection detects several lightly weighted keywords as spam 1`]
           "lightword",
         ],
       },
-      "similarityToPostedContent": 128,
-    },
-    {
-      "comparedContent": {
-        "authorId": "000000000000000000000",
-        "channelId": "000000000000000000000",
-        "content": "LIGHTWORD content content",
-        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
-        "messageId": "000000000000000000000",
-      },
-      "originalContent": {
-        "authorId": "000000000000000000000",
-        "channelId": "000000000000000000000",
-        "content": "LIGHTWORD content content",
-        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
-        "messageId": "000000000000000000000",
-      },
-      "pointsFromMatches": {
-        "highestRankingMatch": 1,
-        "highestRankingString": "lightword",
-        "matches": [
-          "lightword",
-        ],
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 128,
       },
       "similarityToPostedContent": 128,
     },
@@ -109,29 +93,9 @@ exports[`Keyword detection detects several lightly weighted keywords as spam 1`]
           "lightword",
         ],
       },
-      "similarityToPostedContent": 128,
-    },
-    {
-      "comparedContent": {
-        "authorId": "000000000000000000000",
-        "channelId": "000000000000000000000",
-        "content": "LIGHTWORD content content",
-        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
-        "messageId": "000000000000000000000",
-      },
-      "originalContent": {
-        "authorId": "000000000000000000000",
-        "channelId": "000000000000000000000",
-        "content": "LIGHTWORD content content",
-        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
-        "messageId": "000000000000000000000",
-      },
-      "pointsFromMatches": {
-        "highestRankingMatch": 1,
-        "highestRankingString": "lightword",
-        "matches": [
-          "lightword",
-        ],
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 128,
       },
       "similarityToPostedContent": 128,
     },
@@ -156,6 +120,66 @@ exports[`Keyword detection detects several lightly weighted keywords as spam 1`]
         "matches": [
           "lightword",
         ],
+      },
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 128,
+      },
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "LIGHTWORD content content",
+        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "LIGHTWORD content content",
+        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": {
+        "highestRankingMatch": 1,
+        "highestRankingString": "lightword",
+        "matches": [
+          "lightword",
+        ],
+      },
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 128,
+      },
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "LIGHTWORD content content",
+        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000000",
+        "content": "LIGHTWORD content content",
+        "hexHash": "8bd230d06cbf4cc712821ce40b9a0850271a0a51a10219aae429aee0c7918421",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": {
+        "highestRankingMatch": 1,
+        "highestRankingString": "lightword",
+        "matches": [
+          "lightword",
+        ],
+      },
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 128,
       },
       "similarityToPostedContent": 128,
     },

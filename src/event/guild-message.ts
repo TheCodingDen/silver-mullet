@@ -124,13 +124,29 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
     const formatCacheHit = (c: Comparison): string => {
       const link = messageLink({ ...c.comparedContent, guildId: guild.id })
-      const content = _.truncate(c.comparedContent.content, { length: 20 }) || '<no-content>'
-      const matches = c.pointsFromMatches
-      const pointString = matches
-        ? `^ scored **${matches.highestRankingMatch}** points from matches, with highest matching word "**${matches.highestRankingString}**" 
-        similarity of **${c.similarityToPostedContent}** to triggering message
-        all matches were ${matches.matches.map(m => `**${m}**`).join() || '[none]'}`
-        : `no points from matches, similarity of **${c.similarityToPostedContent}** to triggering message `
+      const content = _.truncate(c.comparedContent.content, { length: 30 }) || '<no-content>'
+      const { pointsFromMatches: matches, pointsFromSimilarity: similarity } = c
+
+      let pointString
+
+      if (matches) {
+        pointString = `^ scored **${matches.highestRankingMatch}** points from matches, with highest matching word "**${matches.highestRankingString}**"`
+        if (similarity) {
+          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did pass the threshold of **${similarity.thresholdBroken}** 
+          and scored **${similarity.pointsGained}** points`
+        } else {
+          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did not pass any similarity thresholds.`
+        }
+        pointString += `\nall matches were ${matches.matches.map(m => `**${m}**`).join() || '[none]'}`
+      } else {
+        pointString = '^ no points from matches '
+        if (similarity) {
+          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did pass the threshold of **${similarity.thresholdBroken}**
+          and scored **${similarity.pointsGained}** points`
+        } else {
+          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did not pass any similarity thresholds.`
+        }
+      }
 
       return `"${content}" (${link}):\n${pointString}`
     }
