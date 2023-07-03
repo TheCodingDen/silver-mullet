@@ -7,16 +7,50 @@ import assert from 'assert'
 import color from '../utils/color'
 import { messageLink } from '../utils/discordUtils'
 import _ from 'lodash'
+import prisma from '../clients/prisma'
 
 export async function onGuildMessage (message: Message): Promise<void> {
-  if (message.author.bot || !message.guild) {
+  if (message.author.bot || message.channel.isDMBased() || !message.guild) {
     return
   }
 
   const member = await message.guild.members.fetch(message.author.id)
   const { guild } = message
 
-  // TODO: Ignore functionality goes here
+  // Declare all conditions for the DB to check against
+  // will search channels, categories, and roles.
+  const conditions = [
+    {
+      snowflake: message.channel.id
+    }
+  ]
+
+  // Only search for the parent if it exists
+  if (message.channel.parentId) {
+    conditions.push({
+      snowflake: message.channel.parentId
+    })
+  }
+
+  // Search for each role the author has
+  for (const [, role] of member.roles.cache) {
+    conditions.push({
+      snowflake: role.id
+    })
+  }
+
+  // If there's > 0 entries in the DB, that means there's
+  // an ignore entry for a part of the message, so ignore it.
+  const ignoreEntryCount = await prisma.ignore.count({
+    where: {
+      OR: conditions
+    }
+  })
+
+  if (ignoreEntryCount > 0) {
+    logger.debug(`Ignoring message from ${message.author.id} in channel ${message.channel.id} (parent: ${message.channel.parentId})`)
+    return
+  }
 
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
