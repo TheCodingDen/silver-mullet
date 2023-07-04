@@ -1,5 +1,5 @@
 import { PermissionGroup } from '@prisma/client'
-import { CommandContext } from 'slash-create'
+import { CommandContext, SlashCommand } from 'slash-create'
 import prisma from '../clients/prisma'
 import emoji from './emoji'
 
@@ -31,6 +31,12 @@ export interface CommandLookupErr {
 }
 
 export type CommandLookup = CommandLookupOk | CommandLookupErr
+
+export enum CommandPermissionAssertionResult {
+  MEMBER_UNKNOWN,
+  ALLOWED,
+  NOT_ALLOWED
+}
 
 export function validateSubcommandTree ([rootKey, ...subcommands]: string[], commandTree: CommandBase): CommandLookup {
   if (!commandTree[rootKey]) {
@@ -80,7 +86,7 @@ export function validateSubcommandTree ([rootKey, ...subcommands]: string[], com
   }
 }
 
-export async function assertPermissionGroupMembership (allowed: PermissionGroup[], ctx: CommandContext): Promise<boolean> {
+export async function assertPermissionGroupMembership (allowed: PermissionGroup[], ctx: CommandContext): Promise<CommandPermissionAssertionResult> {
   const targetGroups = await prisma.permissionGroupMapping.findMany({
     where: {
       group: {
@@ -92,18 +98,11 @@ export async function assertPermissionGroupMembership (allowed: PermissionGroup[
   const groupRoleIDs = targetGroups.map(group => group.roleID)
 
   if (!ctx.member) {
-    await ctx.send(`${emoji.error} Sorry, I cannot figure out who you are to authenticate you.`, { ephemeral: true })
-
-    return false
+    return CommandPermissionAssertionResult.MEMBER_UNKNOWN
   } else if (ctx.member.roles.filter(role => groupRoleIDs.includes(role)).length === 0) {
-    await ctx.send(
-      `${emoji.noEntry} Sorry, you are allowed to use this command. You must belong to the following permission ${allowed.length > 1 ? 'groups' : 'group'}: ${allowed.join(', ')}`,
-      { ephemeral: true }
-    )
-
-    return false
+    return CommandPermissionAssertionResult.NOT_ALLOWED
   } else {
-    return true
+    return CommandPermissionAssertionResult.ALLOWED
   }
 }
 
@@ -121,4 +120,45 @@ export function getAssignedGuilds (opts?: { includeMain?: boolean }): string[] {
   guilds.push(process.env.DEVELOPMENT_GUILD_ID as string)
 
   return guilds
+}
+
+export async function handleCommand (
+  instance: SlashCommand,
+  ctx: CommandContext,
+  allowedGroups: PermissionGroup[],
+  subcommandTree: CommandBase
+): Promise<void> {
+  const permissionAssertionResult = await assertPermissionGroupMembership(allowedGroups, ctx)
+
+  switch (permissionAssertionResult) {
+    case CommandPermissionAssertionResult.MEMBER_UNKNOWN:
+      await ctx.send(
+        `${emoji.error} Sorry, I cannot figure out who you are to authenticate you.`,
+        { ephemeral: true }
+      )
+      return
+    case CommandPermissionAssertionResult.NOT_ALLOWED:
+      await ctx.send(
+        `${emoji.noEntry} Sorry, you are allowed to use this command. You must belong to the following permission ${allowedGroups.length > 1 ? 'groups' : 'group'}: ${allowedGroups.join(', ')}`,
+        { ephemeral: true }
+      )
+      return
+  }
+
+  const result = validateSubcommandTree([instance.commandName, ...ctx.subcommands], {
+    [instance.commandName]: subcommandTree
+  })
+
+  if (!result.ok) {
+    logger.error(result.err)
+
+    await ctx.send({
+      content: `${emoji.error} ${result.humanReadableErr}`,
+      ephemeral: true
+    })
+
+    return
+  }
+
+  await result.node[run](ctx)
 }

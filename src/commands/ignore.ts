@@ -7,7 +7,7 @@ import discord from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils/index'
-import { assertPermissionGroupMembership, getAssignedGuilds, run, validateSubcommandTree } from '../utils/commands'
+import { getAssignedGuilds, handleCommand, run } from '../utils/commands'
 
 const fetchers = {
   CATEGORY: async (id: string, guild: Guild) => await guild.channels.fetch(id),
@@ -111,31 +111,14 @@ export default class IgnoreCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
-    if (!await assertPermissionGroupMembership([PermissionGroup.INFRA_ADMIN], ctx)) {
-      return
-    }
-
-    const result = validateSubcommandTree([this.commandName, ...ctx.subcommands], {
-      [this.commandName]: {
-        add: {
-          [run]: this.add.bind(this)
-        },
-        remove: {
-          [run]: this.remove.bind(this)
-        }
+    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN], {
+      add: {
+        [run]: this.add.bind(this)
+      },
+      remove: {
+        [run]: this.remove.bind(this)
       }
     })
-
-    if (!result.ok) {
-      logger.error(result.err)
-      await ctx.send({
-        content: `${emoji.error} ${result.humanReadableErr}`,
-        ephemeral: true
-      })
-      return
-    }
-
-    await result.node[run](ctx)
   }
 
   private async add (ctx: CommandContext): Promise<void> {

@@ -7,7 +7,7 @@ import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils'
-import { validateSubcommandTree, run, getAssignedGuilds, assertPermissionGroupMembership } from '../utils/commands'
+import { run, getAssignedGuilds, handleCommand } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -67,34 +67,17 @@ export default class ConfigCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
-    if (!await assertPermissionGroupMembership([PermissionGroup.INFRA_ADMIN], ctx)) {
-      return
-    }
-
-    const result = validateSubcommandTree([this.commandName, ...ctx.subcommands], {
-      [this.commandName]: {
-        get: {
-          [run]: this.get.bind(this)
-        },
-        assign: {
-          [run]: this.assign.bind(this)
-        },
-        remove: {
-          [run]: this.remove.bind(this)
-        }
+    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN], {
+      get: {
+        [run]: this.get.bind(this)
+      },
+      assign: {
+        [run]: this.assign.bind(this)
+      },
+      remove: {
+        [run]: this.remove.bind(this)
       }
     })
-
-    if (!result.ok) {
-      logger.error(result.err)
-      await ctx.send({
-        content: `${emoji.error} ${result.humanReadableErr}`,
-        ephemeral: true
-      })
-      return
-    }
-
-    await result.node[run](ctx)
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
