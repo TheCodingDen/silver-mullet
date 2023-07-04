@@ -8,14 +8,14 @@ import {
   AutocompleteContext,
   AutocompleteChoice
 } from 'slash-create'
-import { AntiSpamAction, IgnoreTarget, PermissionGroup } from '@prisma/client'
+import { AntiSpamAction, PermissionGroup } from '@prisma/client'
 import _ from 'lodash'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
-import { assertPermissionGroupMembership, embedBase, getAssignedGuilds } from '../utils/discordUtils'
+import { embedBase } from '../utils/discordUtils'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils'
-import { validateSubcommandTree, run } from '../utils/commands'
+import { validateSubcommandTree, run, getAssignedGuilds, assertPermissionGroupMembership } from '../utils/commands'
 
 export default class CCASConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -138,10 +138,8 @@ export default class CCASConfigCommand extends SlashCommand {
       return
     }
 
-    _.values(IgnoreTarget).map(async type => await prisma.ignore.findMany({ where: { type } }))
-
-    const result = validateSubcommandTree(['ccas-config', ...ctx.subcommands], {
-      'ccas-config': {
+    const result = validateSubcommandTree([this.commandName, ...ctx.subcommands], {
+      [this.commandName]: {
         get: {
           [run]: this.get.bind(this)
         },
@@ -249,7 +247,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
     const fields: EmbedField[] = _
       .entries(settings)
-      .filter(([option]) => option !== 'pointOverrides' && option !== 'actionMappings') // Print point overrides & action mappings separately
+      .filter(([option]) => !['pointOverrides', 'actionMappings'].includes(option)) // Print point overrides & action mappings separately
       .map(([option, value]) => ({
         name: option,
         value: value.toString(),

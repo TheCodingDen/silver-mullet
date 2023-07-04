@@ -5,9 +5,9 @@ import _ from 'lodash'
 import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, AutocompleteContext, AutocompleteChoice } from 'slash-create'
 import discord from '../clients/discord'
 import prisma from '../clients/prisma'
-import { assertPermissionGroupMembership, getAssignedGuilds } from '../utils/discordUtils'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils/index'
+import { assertPermissionGroupMembership, getAssignedGuilds, run, validateSubcommandTree } from '../utils/commands'
 
 const fetchers = {
   CATEGORY: async (id: string, guild: Guild) => await guild.channels.fetch(id),
@@ -115,19 +115,27 @@ export default class IgnoreCommand extends SlashCommand {
       return
     }
 
-    const { subcommands } = ctx
+    const result = validateSubcommandTree([this.commandName, ...ctx.subcommands], {
+      [this.commandName]: {
+        add: {
+          [run]: this.add.bind(this)
+        },
+        remove: {
+          [run]: this.remove.bind(this)
+        }
+      }
+    })
 
-    switch (subcommands[0]) {
-      case 'add':
-        await this.add(ctx)
-        break
-      case 'remove':
-        await this.remove(ctx)
-        break
-      default:
-        logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
-        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
+    if (!result.ok) {
+      logger.error(result.err)
+      await ctx.send({
+        content: `${emoji.error} ${result.humanReadableErr}`,
+        ephemeral: true
+      })
+      return
     }
+
+    await result.node[run](ctx)
   }
 
   private async add (ctx: CommandContext): Promise<void> {

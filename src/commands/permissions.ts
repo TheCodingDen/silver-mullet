@@ -2,12 +2,12 @@ import { PermissionGroup, Prisma } from '@prisma/client'
 import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, AutocompleteContext, AutocompleteChoice } from 'slash-create'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
 import _ from 'lodash'
-import { assertPermissionGroupMembership, getAssignedGuilds, isDiscordID } from '../utils/discordUtils'
+import { isDiscordID } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
 import { alphabetical, humanLikely } from '../utils'
-import { validateSubcommandTree, run } from '../utils/commands'
+import { validateSubcommandTree, run, getAssignedGuilds, assertPermissionGroupMembership } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -71,8 +71,8 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    const result = validateSubcommandTree(['permissions', ...ctx.subcommands], {
-      permissions: {
+    const result = validateSubcommandTree([this.commandName, ...ctx.subcommands], {
+      [this.commandName]: {
         get: {
           [run]: this.get.bind(this)
         },
