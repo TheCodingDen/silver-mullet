@@ -312,7 +312,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await sendSuccess(`CCAS setting **${setting}** set to **${value}**.`, ctx)
     } catch (err) {
       logger.error(`CCAS setting update  ${setting} -> ${value} failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to update CCAS setting ${setting} to ${value}: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to update CCAS setting ${setting} to ${value}: ${errMessage(err)}`, ctx, false)
     }
   }
 
@@ -353,7 +353,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await sendSuccess(`Will **${action.toLowerCase()}** when user accumulates **${points}** points.`, ctx)
     } catch (err) {
       logger.error(`CCAS action mapping creation for ${points} points -> ${action} failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to add CCAS action mapping: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to add CCAS action mapping: ${errMessage(err)}`, ctx, false)
     }
   }
 
@@ -399,7 +399,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await sendSuccess(`Removed mapping **${points}** => **${action}**.`, ctx)
     } catch (err) {
       logger.error(`CCAS action mapping removal for ${points} -> ${action} failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to remove CCAS action mapping: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to remove CCAS action mapping: ${errMessage(err)}`, ctx, false)
     }
   }
 
@@ -435,7 +435,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await sendSuccess(`Point override for word **${word}** set to **${points}** points.`, ctx)
     } catch (err) {
       logger.error(`CCAS point override setting for "${word}" -> ${points} points failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to set CCAS point override: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to set CCAS point override: ${errMessage(err)}`, ctx, false)
     }
   }
 
@@ -479,7 +479,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await sendSuccess(`Point override for word **${word}** removed.`, ctx)
     } catch (err) {
       logger.error(`CCAS point override removal for "${word}" failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to remove CCAS point override: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to remove CCAS point override: ${errMessage(err)}`, ctx, false)
     }
   }
 }

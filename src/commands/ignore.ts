@@ -175,7 +175,7 @@ export default class IgnoreCommand extends SlashCommand {
       await sendSuccess(`Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list.`, ctx)
     } catch (err) {
       logger.error(`Ignore creating for ${entityType.toLowerCase()} ${discordEntity.id} failed: ${errStack(err)}`)
-      await sendFailure(`Failed to create ignore, target is still not ignored: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to create ignore, target is still not ignored: ${errMessage(err)}`, ctx, false)
     }
   }
 
@@ -221,7 +221,7 @@ export default class IgnoreCommand extends SlashCommand {
       await sendSuccess('Ignore removed.', ctx)
     } catch (err) {
       logger.error(`Ignore removal for ${found.type.toLowerCase()} ${found.snowflake} failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to remove ignore, target is still ignored: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to remove ignore, target is still ignored: ${errMessage(err)}`, ctx, false)
     }
   }
 }

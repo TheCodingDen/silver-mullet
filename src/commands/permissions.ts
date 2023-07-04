@@ -143,7 +143,7 @@ export default class ConfigCommand extends SlashCommand {
       await sendSuccess(`Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, ctx)
     } catch (err) {
       logger.error(`Permission group assignment for role ${guildID}:${roleID} -> ${group} failed: ${errStack(err)}`)
-      await sendFailure(`Permission group assignment failed: ${errMessage(err)}`, ctx)
+      await sendFailure(`Permission group assignment failed: ${errMessage(err)}`, ctx, false)
     }
   }
 
@@ -172,7 +172,7 @@ export default class ConfigCommand extends SlashCommand {
       await sendSuccess('Permission group assignment removed.', ctx)
     } catch (err) {
       logger.error(`Permission group assignment removal for role ${guildID}:${roleID} failed: ${errStack(err)}`)
-      await sendFailure(`Failed to remove permission group assignment: ${errMessage(err)}`, ctx)
+      await sendFailure(`Failed to remove permission group assignment: ${errMessage(err)}`, ctx, false)
     }
   }
 }
