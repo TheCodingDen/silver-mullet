@@ -22,9 +22,8 @@ describe('Keyword detection', () => {
       create: {
         version: 1,
         maxSizeDiffPercentage: 30,
-        maxTimeDiffMinutes: 3,
+        cacheTTLSeconds: 3,
         minMessageLength: 10,
-        pointRequirement: 5,
         pointsOnMatch: 1,
         shortMessageLength: 15,
         shortMessageSimilarityThreshold: 80,
@@ -53,9 +52,8 @@ describe('Keyword detection', () => {
       update: {
         version: 1,
         maxSizeDiffPercentage: 30,
-        maxTimeDiffMinutes: 3,
+        cacheTTLSeconds: 3,
         minMessageLength: 10,
-        pointRequirement: 5,
         pointsOnMatch: 1,
         shortMessageLength: 15,
         shortMessageSimilarityThreshold: 80,
