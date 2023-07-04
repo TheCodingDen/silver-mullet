@@ -13,9 +13,8 @@ import _ from 'lodash'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
 import { embedBase } from '../utils/discordUtils'
 import prisma from '../clients/prisma'
-import emoji from '../utils/emoji'
 import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
-import { run, getAssignedGuilds, handleCommand } from '../utils/commands'
+import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
 
 export default class CCASConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -224,7 +223,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!settings) {
-      await ctx.send(`${emoji.error} No CCAS settings found!`, { ephemeral: true })
+      await sendFailure('No CCAS settings found!', ctx)
       return
     }
 
@@ -285,24 +284,24 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!settings) {
-      await ctx.send(`${emoji.error} No CCAS settings found!`, { ephemeral: true })
+      await sendFailure('No CCAS settings found!', ctx)
       return
     }
 
     if (!(setting in settings)) {
-      await ctx.send(`${emoji.error} Unknown CCAS setting **${setting}**.`, { ephemeral: true })
+      await sendFailure(`Unknown CCAS setting **${setting}**.`, ctx)
       return
     }
 
     if (setting === 'version') {
-      await ctx.send(`${emoji.error} Editing the CCAS settings version is not allowed.`, { ephemeral: true })
+      await sendFailure('Editing the CCAS settings version is not allowed.', ctx)
       return
     }
 
     const parsed = parseInt(value)
 
     if (!_.isFinite(parsed)) {
-      await ctx.send(`${emoji.error} Setting must be a valid number.`, { ephemeral: true })
+      await sendFailure('Setting must be a valid number.', ctx)
       return
     }
 
@@ -317,10 +316,10 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       logger.info(`${ctx.user.username} updated CCAS setting ${setting} to ${parsed}`)
-      await ctx.send(`${emoji.success} CCAS setting **${setting}** set to **${parsed}**.`, { ephemeral: true })
+      await sendSuccess(`CCAS setting **${setting}** set to **${parsed}**.`, ctx)
     } catch (err) {
       logger.error(`CCAS setting update  ${setting} -> ${parsed} failed:\n${errStack(err)}`)
-      await ctx.send(`${emoji.error} Failed to update CCAS setting ${setting} to ${parsed}: ${errMessage(err)}`, { ephemeral: true })
+      await sendFailure(`Failed to update CCAS setting ${setting} to ${parsed}: ${errMessage(err)}`, ctx)
     }
   }
 
@@ -331,12 +330,12 @@ export default class CCASConfigCommand extends SlashCommand {
     const parsed = parseInt(points)
 
     if (!_.isFinite(parsed)) {
-      await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
+      await sendFailure('Point amount must be a valid number.', ctx)
       return
     }
 
     if (!isAntiSpamAction(action)) {
-      await ctx.send(`${emoji.error} Provided action was not in the enum, Discord must have screwed up.`, { ephemeral: true })
+      await sendFailure(`Unknown CCAS action **${action}**.`, ctx)
       return
     }
 
@@ -348,7 +347,7 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       if (!settings) {
-        await ctx.send(`${emoji.error} No CCAS settings found, cannot set action mapping!`, { ephemeral: true })
+        await sendFailure('No CCAS settings found, cannot set action mapping!', ctx)
         return
       }
 
@@ -365,10 +364,10 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to happen at ${parsed} points`)
-      await ctx.send(`${emoji.success} Will **${action}** when user accumulates **${parsed}** points.`, { ephemeral: true })
+      await sendSuccess(`Will **${action.toLowerCase()}** when user accumulates **${parsed}** points.`, ctx)
     } catch (err) {
       logger.error(`CCAS action mapping creation for ${parsed} points -> ${action} failed:\n${errStack(err)}`)
-      await ctx.send(`${emoji.error} Failed to add CCAS action mapping: ${errMessage(err)}`, { ephemeral: true })
+      await sendFailure(`Failed to add CCAS action mapping: ${errMessage(err)}`, ctx)
     }
   }
 
@@ -383,7 +382,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!settings) {
-      await ctx.send(`${emoji.error} No CCAS settings found, cannot set action mapping!`, { ephemeral: true })
+      await sendFailure('No CCAS settings found, cannot remove action mapping!', ctx)
       return
     }
 
@@ -397,7 +396,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!mapping) {
-      await ctx.send(`${emoji.error} No data found for mapping, Discord must haved screwed up, or our autocomplete implementation is bugged.`, { ephemeral: true })
+      await sendFailure('No data found for that mapping.', ctx)
       return
     }
 
@@ -411,10 +410,10 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       logger.info(`${ctx.user.username} removed mapping **${points}** => **${action}**.`)
-      await ctx.send(`${emoji.error} Removed mapping **${points}** => **${action}**.`, { ephemeral: true })
+      await sendSuccess(`Removed mapping **${points}** => **${action}**.`, ctx)
     } catch (err) {
       logger.error(`CCAS action mapping removal for ${points} -> ${action} failed:\n${errStack(err)}`)
-      await ctx.send(`${emoji.error} Failed to remove CCAS action mapping: ${errMessage(err)}`, { ephemeral: true })
+      await sendFailure(`Failed to remove CCAS action mapping: ${errMessage(err)}`, ctx)
     }
   }
 
@@ -425,7 +424,7 @@ export default class CCASConfigCommand extends SlashCommand {
     const parsed = parseInt(points)
 
     if (!_.isFinite(parsed)) {
-      await ctx.send(`${emoji.error} Point amount must be a valid number.`, { ephemeral: true })
+      await sendFailure('Point amount must be a valid number.', ctx)
       return
     }
 
@@ -437,7 +436,7 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       if (!settings) {
-        await ctx.send(`${emoji.error} No CCAS settings found, cannot set point overrides!`, { ephemeral: true })
+        await sendFailure('No CCAS settings found, cannot set point overrides!', ctx)
         return
       }
 
@@ -454,10 +453,10 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       logger.info(`${ctx.user.username} set CCAS point override for "${word}" to ${parsed} points`)
-      await ctx.send(`${emoji.success} Point override for word **${word}** set to **${parsed}** points.`, { ephemeral: true })
+      await sendSuccess(`Point override for word **${word}** set to **${parsed}** points.`, ctx)
     } catch (err) {
       logger.error(`CCAS point override setting for "${word}" -> ${parsed} points failed:\n${errStack(err)}`)
-      await ctx.send(`${emoji.error} Failed to set CCAS point override: ${errMessage(err)}`, { ephemeral: true })
+      await sendFailure(`Failed to set CCAS point override: ${errMessage(err)}`, ctx)
     }
   }
 
@@ -472,7 +471,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!settings) {
-      await ctx.send(`${emoji.error} No CCAS settings found, cannot remove point overrides!`, { ephemeral: true })
+      await sendFailure('No CCAS settings found, cannot remove point overrides!', ctx)
       return
     }
 
@@ -486,7 +485,7 @@ export default class CCASConfigCommand extends SlashCommand {
     })
 
     if (!override) {
-      await ctx.send(`${emoji.error} No point override found for word **${word}** in settings version **${settings.version}**.`, { ephemeral: true })
+      await sendFailure(`No point override found for word **${word}** in settings version **${settings.version}**.`, ctx)
       return
     }
 
@@ -498,10 +497,10 @@ export default class CCASConfigCommand extends SlashCommand {
       })
 
       logger.info(`${ctx.user.username} removed CCAS point override for "${word}"`)
-      await ctx.send(`${emoji.success} Point override for word **${word}** removed.`, { ephemeral: true })
+      await sendSuccess(`Point override for word **${word}** removed.`, ctx)
     } catch (err) {
       logger.error(`CCAS point override removal for "${word}" failed:\n${errStack(err)}`)
-      await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${errMessage(err)}`, { ephemeral: true })
+      await sendFailure(`Failed to remove CCAS point override: ${errMessage(err)}`, ctx)
     }
   }
 }

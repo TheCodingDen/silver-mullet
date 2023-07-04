@@ -5,9 +5,8 @@ import _ from 'lodash'
 import { isDiscordID } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
-import emoji from '../utils/emoji'
 import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
-import { run, getAssignedGuilds, handleCommand } from '../utils/commands'
+import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -151,17 +150,17 @@ export default class ConfigCommand extends SlashCommand {
     const { role: roleID, group } = options.assign as { role: string, group: PermissionGroup }
 
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.`)
+      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.', ctx)
       return
     }
 
     if (!isDiscordID(roleID)) {
-      await ctx.send(`${emoji.error} Invalid role ID.`, { ephemeral: true })
+      await sendFailure('Invalid role ID.', ctx)
       return
     }
 
     if (!(group in PermissionGroup)) {
-      await ctx.send(`${emoji.error} Invalid permission group. Valid permission groups are: ${_.keys(PermissionGroup).join(', ')}`, { ephemeral: true })
+      await sendFailure(`Invalid permission group. Valid permission groups are: ${_.keys(PermissionGroup).join(', ')}`, ctx)
       return
     }
 
@@ -183,13 +182,10 @@ export default class ConfigCommand extends SlashCommand {
       const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
 
       logger.info(`${ctx.user.username} assigned role ${assigned?.name ?? roleID} to permission group ${group}`)
-      await ctx.send(`${emoji.success} Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, { ephemeral: true })
+      await sendSuccess(`Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, ctx)
     } catch (err) {
       logger.error(`Permission group assignment for role ${guildID}:${roleID} -> ${group} failed: ${errStack(err)}`)
-      await ctx.send({
-        content: `${emoji.error} Permission group assignment failed: ${errMessage(err)}`,
-        ephemeral: true
-      })
+      await sendFailure(`Permission group assignment failed: ${errMessage(err)}`, ctx)
     }
   }
 
@@ -198,17 +194,17 @@ export default class ConfigCommand extends SlashCommand {
     const { role: roleID } = options.remove as { role: string }
 
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.`)
+      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.', ctx)
       return
     }
 
     if (!isDiscordID(roleID)) {
-      await ctx.send(`${emoji.error} Invalid role ID.`, { ephemeral: true })
+      await sendFailure('Invalid role ID.', ctx)
       return
     }
 
     if (!await prisma.permissionGroupMapping.findFirst({ where: { roleID } })) {
-      await ctx.send(`${emoji.error} That role is not assigned to a permission group.`, { ephemeral: true })
+      await sendFailure('That role is not assigned to a permission group.', ctx)
       return
     }
 
@@ -220,13 +216,10 @@ export default class ConfigCommand extends SlashCommand {
       })
 
       logger.info(`${ctx.user.username} removed permission group assignment for role ${roleID}`)
-      await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
+      await sendSuccess('Permission group assignment removed.', ctx)
     } catch (err) {
       logger.error(`Permission group assignment removal for role ${guildID}:${roleID} failed: ${errStack(err)}`)
-      await ctx.send({
-        content: `Failed to remove permission group assignment: ${errMessage(err)}`,
-        ephemeral: true
-      })
+      await sendFailure(`Failed to remove permission group assignment: ${errMessage(err)}`, ctx)
     }
   }
 }

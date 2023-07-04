@@ -162,3 +162,11 @@ export async function handleCommand (
 
   await result.node[run](ctx)
 }
+
+export async function sendSuccess (message: string, ctx: CommandContext): Promise<void> {
+  await ctx.send(`${emoji.success} ${message}`, { ephemeral: true })
+}
+
+export async function sendFailure (message: string, ctx: CommandContext): Promise<void> {
+  await ctx.send(`${emoji.error} ${message}`, { ephemeral: true })
+}
