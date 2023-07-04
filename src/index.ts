@@ -31,7 +31,7 @@ creator.on('commandRun', (command, _, ctx) =>
   logger.info(`${ctx.user.username} (${ctx.user.id}) ran command ${command.commandName}`)
 )
 creator.on('commandRegister', command => logger.info(`Registered command ${command.commandName}`))
-creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:\n${error}`))
+creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:\n${error.stack ?? error}`))
 
 void (async () => {
   creator
