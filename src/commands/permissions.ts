@@ -1,7 +1,6 @@
 import { PermissionGroup, Prisma } from '@prisma/client'
 import { SlashCommand, SlashCreator, CommandContext, CommandOptionType } from 'slash-create'
 import _ from 'lodash'
-import { isDiscordID } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import { errMessage, errStack } from '../utils'
@@ -116,20 +115,10 @@ export default class ConfigCommand extends SlashCommand {
 
   private async assign (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
-    const { role: roleID, group } = options.assign as { role: string, group: string }
+    const { role: roleID, group } = options.assign as { role: string, group: PermissionGroup }
 
     if (!guildID) {
       await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.', ctx)
-      return
-    }
-
-    if (!isDiscordID(roleID)) {
-      await sendFailure('Invalid role ID.', ctx)
-      return
-    }
-
-    if (!isPermissionGroup(group)) {
-      await sendFailure(`Invalid permission group. Valid permission groups are: ${_.keys(PermissionGroup).join(', ')}`, ctx)
       return
     }
 
@@ -167,11 +156,6 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    if (!isDiscordID(roleID)) {
-      await sendFailure('Invalid role ID.', ctx)
-      return
-    }
-
     if (!await prisma.permissionGroupMapping.findFirst({ where: { roleID } })) {
       await sendFailure('That role is not assigned to a permission group.', ctx)
       return
@@ -191,8 +175,4 @@ export default class ConfigCommand extends SlashCommand {
       await sendFailure(`Failed to remove permission group assignment: ${errMessage(err)}`, ctx)
     }
   }
-}
-
-function isPermissionGroup (value: string): value is PermissionGroup {
-  return value in PermissionGroup
 }

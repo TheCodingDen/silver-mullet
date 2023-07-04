@@ -122,6 +122,7 @@ export default class IgnoreCommand extends SlashCommand {
 
   private async add (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
+
     if (!guildID) {
       await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these ignores are being modified.', ctx)
       return
@@ -180,6 +181,7 @@ export default class IgnoreCommand extends SlashCommand {
 
   private async remove (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
+
     if (!guildID) {
       await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these ignores are being modified.', ctx)
       return

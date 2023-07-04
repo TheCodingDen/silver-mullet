@@ -318,15 +318,10 @@ export default class CCASConfigCommand extends SlashCommand {
 
   private async setActionMapping (ctx: CommandContext): Promise<void> {
     const { options } = ctx
-    const { points, action } = options.actions.set as { points: number, action: string }
+    const { points, action } = options.actions.set as { points: number, action: AntiSpamAction }
 
     if (!_.isFinite(points)) {
       await sendFailure('Point amount must be a valid number.', ctx)
-      return
-    }
-
-    if (!isAntiSpamAction(action)) {
-      await sendFailure(`Unknown CCAS action **${action}**.`, ctx)
       return
     }
 
@@ -487,8 +482,4 @@ export default class CCASConfigCommand extends SlashCommand {
       await sendFailure(`Failed to remove CCAS point override: ${errMessage(err)}`, ctx)
     }
   }
-}
-
-function isAntiSpamAction (value: string): value is AntiSpamAction {
-  return value in AntiSpamAction
 }
