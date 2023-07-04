@@ -22,9 +22,8 @@ describe('Quantity spam', () => {
       create: {
         version: 1,
         maxSizeDiffPercentage: 30,
-        maxTimeDiffMinutes: 3,
+        cacheTTLSeconds: 3,
         minMessageLength: 10,
-        pointRequirement: 5,
         pointsOnMatch: 1,
         shortMessageLength: 15,
         shortMessageSimilarityThreshold: 80,
@@ -39,9 +38,8 @@ describe('Quantity spam', () => {
       update: {
         version: 1,
         maxSizeDiffPercentage: 30,
-        maxTimeDiffMinutes: 3,
+        cacheTTLSeconds: 3,
         minMessageLength: 10,
-        pointRequirement: 5,
         pointsOnMatch: 1,
         shortMessageLength: 15,
         shortMessageSimilarityThreshold: 80,
