@@ -179,18 +179,18 @@ export default class ConfigCommand extends SlashCommand {
           group
         }
       })
+
+      const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
+
+      logger.info(`${ctx.user.username} assigned role ${assigned?.name ?? roleID} to permission group ${group}`)
+      await ctx.send(`${emoji.success} Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, { ephemeral: true })
     } catch (err) {
       logger.error(`Permission group assignment for role ${guildID}:${roleID} -> ${group} failed: ${errStack(err)}`)
       await ctx.send({
         content: `${emoji.error} Permission group assignment failed: ${errMessage(err)}`,
         ephemeral: true
       })
-      return
     }
-
-    const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
-
-    await ctx.send(`${emoji.success} Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, { ephemeral: true })
   }
 
   private async remove (ctx: CommandContext): Promise<void> {
@@ -218,15 +218,15 @@ export default class ConfigCommand extends SlashCommand {
           roleID
         }
       })
+
+      logger.info(`${ctx.user.username} removed permission group assignment for role ${roleID}`)
+      await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
     } catch (err) {
       logger.error(`Permission group assignment removal for role ${guildID}:${roleID} failed: ${errStack(err)}`)
       await ctx.send({
         content: `Failed to remove permission group assignment: ${errMessage(err)}`,
         ephemeral: true
       })
-      return
     }
-
-    await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
   }
 }

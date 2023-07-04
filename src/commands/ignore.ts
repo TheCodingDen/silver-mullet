@@ -171,23 +171,21 @@ export default class IgnoreCommand extends SlashCommand {
           type: entityType
         }
       })
+
+      const mention = discordEntity instanceof Role ? `<@&${entityId}>` : `<#${entityId}>`
+
+      logger.info(`${ctx.user.username} added ignore with name: ${discordEntity.name} (${discordEntity.id})`)
+      await ctx.send({
+        content: `${emoji.success} Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list`,
+        ephemeral: true
+      })
     } catch (err) {
       logger.error(`Ignore creating for ${entityType.toLowerCase()} ${discordEntity.id} failed: ${errStack(err)}`)
       await ctx.send({
         content: `Failed to create ignore, target is still not ignored: ${errMessage(err)}`,
         ephemeral: true
       })
-      return
     }
-
-    const mention = discordEntity instanceof Role ? `<@&${entityId}>` : `<#${entityId}>`
-
-    logger.info(`${ctx.user.username} added ignore with name: ${discordEntity.name} (${discordEntity.id})`)
-
-    await ctx.send({
-      content: `${emoji.success} Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list`,
-      ephemeral: true
-    })
   }
 
   private async remove (ctx: CommandContext): Promise<void> {
@@ -232,18 +230,15 @@ export default class IgnoreCommand extends SlashCommand {
           id: entityId
         }
       })
+
+      logger.info(`${ctx.user.username} removed an ignore for ${discordEntity.name} (${discordEntity.id})`)
+      await ctx.send({ content: `${emoji.success} Ignore removed.`, ephemeral: true })
     } catch (err) {
       logger.error(`Ignore removal for ${found.type.toLowerCase()} ${found.snowflake} failed:\n${errStack(err)}`)
       await ctx.send({
         content: `Failed to remove ignore, target is still ignored: ${errMessage(err)}`,
         ephemeral: true
       })
-      return
     }
-
-    await ctx.send({
-      content: `${emoji.success} Ignore removed.`,
-      ephemeral: true
-    })
   }
 }
