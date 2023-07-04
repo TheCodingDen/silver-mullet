@@ -41,7 +41,7 @@ export default class CCASConfigCommand extends SlashCommand {
               autocomplete: true
             },
             {
-              type: CommandOptionType.STRING,
+              type: CommandOptionType.INTEGER,
               name: 'value',
               description: 'The value to set for the given setting.',
               required: true
@@ -65,7 +65,7 @@ export default class CCASConfigCommand extends SlashCommand {
                   required: true
                 },
                 {
-                  type: CommandOptionType.STRING,
+                  type: CommandOptionType.INTEGER,
                   name: 'points',
                   description: 'The amount of points a message containing this word will incur.',
                   required: true
@@ -98,7 +98,7 @@ export default class CCASConfigCommand extends SlashCommand {
               description: 'Set a CCAS action for a given point threshold.',
               options: [
                 {
-                  type: CommandOptionType.STRING,
+                  type: CommandOptionType.INTEGER,
                   name: 'points',
                   description: 'The point threshold at which to trigger the action.',
                   required: true
@@ -107,7 +107,7 @@ export default class CCASConfigCommand extends SlashCommand {
                   type: CommandOptionType.STRING,
                   name: 'action',
                   description: 'The action to perform.',
-                  choices: _.keys(AntiSpamAction).map(k => ({ name: k, value: k })),
+                  choices: _.keys(AntiSpamAction).map(action => ({ name: action, value: action })),
                   required: true
                 }
               ]
@@ -298,38 +298,29 @@ export default class CCASConfigCommand extends SlashCommand {
       return
     }
 
-    const parsed = parseInt(value)
-
-    if (!_.isFinite(parsed)) {
-      await sendFailure('Setting must be a valid number.', ctx)
-      return
-    }
-
     try {
       await prisma.crossChannelAntiSpamSettings.update({
         where: {
           version: settings.version
         },
         data: {
-          [setting]: parsed
+          [setting]: value
         }
       })
 
-      logger.info(`${ctx.user.username} updated CCAS setting ${setting} to ${parsed}`)
-      await sendSuccess(`CCAS setting **${setting}** set to **${parsed}**.`, ctx)
+      logger.info(`${ctx.user.username} updated CCAS setting ${setting} to ${value}`)
+      await sendSuccess(`CCAS setting **${setting}** set to **${value}**.`, ctx)
     } catch (err) {
-      logger.error(`CCAS setting update  ${setting} -> ${parsed} failed:\n${errStack(err)}`)
-      await sendFailure(`Failed to update CCAS setting ${setting} to ${parsed}: ${errMessage(err)}`, ctx)
+      logger.error(`CCAS setting update  ${setting} -> ${value} failed:\n${errStack(err)}`)
+      await sendFailure(`Failed to update CCAS setting ${setting} to ${value}: ${errMessage(err)}`, ctx)
     }
   }
 
   private async setActionMapping (ctx: CommandContext): Promise<void> {
     const { options } = ctx
-    const { points, action } = options.actions.set as { points: string, action: string }
+    const { points, action } = options.actions.set as { points: number, action: string }
 
-    const parsed = parseInt(points)
-
-    if (!_.isFinite(parsed)) {
+    if (!_.isFinite(points)) {
       await sendFailure('Point amount must be a valid number.', ctx)
       return
     }
@@ -354,7 +345,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await prisma.antiSpamActionMapping.create({
         data: {
           action,
-          points: parsed,
+          points,
           settings: {
             connect: {
               version: settings.version
@@ -363,10 +354,10 @@ export default class CCASConfigCommand extends SlashCommand {
         }
       })
 
-      logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to happen at ${parsed} points`)
-      await sendSuccess(`Will **${action.toLowerCase()}** when user accumulates **${parsed}** points.`, ctx)
+      logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to happen at ${points} points`)
+      await sendSuccess(`Will **${action.toLowerCase()}** when user accumulates **${points}** points.`, ctx)
     } catch (err) {
-      logger.error(`CCAS action mapping creation for ${parsed} points -> ${action} failed:\n${errStack(err)}`)
+      logger.error(`CCAS action mapping creation for ${points} points -> ${action} failed:\n${errStack(err)}`)
       await sendFailure(`Failed to add CCAS action mapping: ${errMessage(err)}`, ctx)
     }
   }
@@ -419,14 +410,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
   private async setPointOverride (ctx: CommandContext): Promise<void> {
     const { options } = ctx
-    const { word, points } = options['point-overrides'].set as { word: string, points: string }
-
-    const parsed = parseInt(points)
-
-    if (!_.isFinite(parsed)) {
-      await sendFailure('Point amount must be a valid number.', ctx)
-      return
-    }
+    const { word, points } = options['point-overrides'].set as { word: string, points: number }
 
     try {
       const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
@@ -443,7 +427,7 @@ export default class CCASConfigCommand extends SlashCommand {
       await prisma.pointOverride.create({
         data: {
           word,
-          points: parsed,
+          points,
           settings: {
             connect: {
               version: settings.version
@@ -452,10 +436,10 @@ export default class CCASConfigCommand extends SlashCommand {
         }
       })
 
-      logger.info(`${ctx.user.username} set CCAS point override for "${word}" to ${parsed} points`)
-      await sendSuccess(`Point override for word **${word}** set to **${parsed}** points.`, ctx)
+      logger.info(`${ctx.user.username} set CCAS point override for "${word}" to ${points} points`)
+      await sendSuccess(`Point override for word **${word}** set to **${points}** points.`, ctx)
     } catch (err) {
-      logger.error(`CCAS point override setting for "${word}" -> ${parsed} points failed:\n${errStack(err)}`)
+      logger.error(`CCAS point override setting for "${word}" -> ${points} points failed:\n${errStack(err)}`)
       await sendFailure(`Failed to set CCAS point override: ${errMessage(err)}`, ctx)
     }
   }
