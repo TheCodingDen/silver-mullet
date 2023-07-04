@@ -172,6 +172,7 @@ export default class IgnoreCommand extends SlashCommand {
         }
       })
     } catch (err) {
+      logger.error(`Ignore creating for ${entityType.toLowerCase()} ${discordEntity.id} failed: ${err instanceof Error ? err.stack : err}`)
       await ctx.send({
         content: `Failed to create ignore, target is still not ignored: ${err instanceof Error ? err.message : err}`,
         ephemeral: true
@@ -232,6 +233,7 @@ export default class IgnoreCommand extends SlashCommand {
         }
       })
     } catch (err) {
+      logger.error(`Ignore removal for ${found.type.toLowerCase()} ${found.snowflake} failed:\n${err instanceof Error ? err.stack : err}`)
       await ctx.send({
         content: `Failed to remove ignore, target is still ignored: ${err instanceof Error ? err.message : err}`,
         ephemeral: true
