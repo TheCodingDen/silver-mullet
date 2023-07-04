@@ -14,7 +14,7 @@ import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
 import { embedBase } from '../utils/discordUtils'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
-import { alphabetical, humanLikely } from '../utils'
+import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
 import { run, getAssignedGuilds, handleCommand } from '../utils/commands'
 
 export default class CCASConfigCommand extends SlashCommand {
@@ -319,8 +319,8 @@ export default class CCASConfigCommand extends SlashCommand {
       logger.info(`${ctx.user.username} updated CCAS setting ${setting} to ${parsed}`)
       await ctx.send(`${emoji.success} CCAS setting **${setting}** set to **${parsed}**.`, { ephemeral: true })
     } catch (err) {
-      logger.error(`CCAS setting update  ${setting} -> ${parsed} failed:\n${err instanceof Error ? err.stack : err}`)
-      await ctx.send(`${emoji.error} Failed to update CCAS setting ${setting} to ${parsed}: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+      logger.error(`CCAS setting update  ${setting} -> ${parsed} failed:\n${errStack(err)}`)
+      await ctx.send(`${emoji.error} Failed to update CCAS setting ${setting} to ${parsed}: ${errMessage(err)}`, { ephemeral: true })
     }
   }
 
@@ -367,8 +367,8 @@ export default class CCASConfigCommand extends SlashCommand {
       logger.info(`${ctx.user.username} added CCAS action mapping for "${action}" to happen at ${parsed} points`)
       await ctx.send(`${emoji.success} Will **${action}** when user accumulates **${parsed}** points.`, { ephemeral: true })
     } catch (err) {
-      logger.error(`CCAS action mapping creation for ${parsed} points -> ${action} failed:\n${err instanceof Error ? err.stack : err}`)
-      await ctx.send(`${emoji.error} Failed to add CCAS action mapping: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+      logger.error(`CCAS action mapping creation for ${parsed} points -> ${action} failed:\n${errStack(err)}`)
+      await ctx.send(`${emoji.error} Failed to add CCAS action mapping: ${errMessage(err)}`, { ephemeral: true })
     }
   }
 
@@ -413,8 +413,8 @@ export default class CCASConfigCommand extends SlashCommand {
       logger.info(`${ctx.user.username} removed mapping **${points}** => **${action}**.`)
       await ctx.send(`${emoji.error} Removed mapping **${points}** => **${action}**.`, { ephemeral: true })
     } catch (err) {
-      logger.error(`CCAS action mapping removal for ${points} -> ${action} failed:\n${err instanceof Error ? err.stack : err}`)
-      await ctx.send(`${emoji.error} Failed to remove CCAS action mapping: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+      logger.error(`CCAS action mapping removal for ${points} -> ${action} failed:\n${errStack(err)}`)
+      await ctx.send(`${emoji.error} Failed to remove CCAS action mapping: ${errMessage(err)}`, { ephemeral: true })
     }
   }
 
@@ -456,8 +456,8 @@ export default class CCASConfigCommand extends SlashCommand {
       logger.info(`${ctx.user.username} set CCAS point override for "${word}" to ${parsed} points`)
       await ctx.send(`${emoji.success} Point override for word **${word}** set to **${parsed}** points.`, { ephemeral: true })
     } catch (err) {
-      logger.error(`CCAS point override setting for "${word}" -> ${parsed} points failed:\n${err instanceof Error ? err.stack : err}`)
-      await ctx.send(`${emoji.error} Failed to set CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+      logger.error(`CCAS point override setting for "${word}" -> ${parsed} points failed:\n${errStack(err)}`)
+      await ctx.send(`${emoji.error} Failed to set CCAS point override: ${errMessage(err)}`, { ephemeral: true })
     }
   }
 
@@ -500,8 +500,8 @@ export default class CCASConfigCommand extends SlashCommand {
       logger.info(`${ctx.user.username} removed CCAS point override for "${word}"`)
       await ctx.send(`${emoji.success} Point override for word **${word}** removed.`, { ephemeral: true })
     } catch (err) {
-      logger.error(`CCAS point override removal for "${word}" failed:\n${err instanceof Error ? err.stack : err}`)
-      await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${err instanceof Error ? err.message : err}`, { ephemeral: true })
+      logger.error(`CCAS point override removal for "${word}" failed:\n${errStack(err)}`)
+      await ctx.send(`${emoji.error} Failed to remove CCAS point override: ${errMessage(err)}`, { ephemeral: true })
     }
   }
 }

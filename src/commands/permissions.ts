@@ -6,7 +6,7 @@ import { isDiscordID } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
-import { alphabetical, humanLikely } from '../utils'
+import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
 import { run, getAssignedGuilds, handleCommand } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
@@ -180,9 +180,9 @@ export default class ConfigCommand extends SlashCommand {
         }
       })
     } catch (err) {
-      logger.error(`Permission group assignment for role ${guildID}:${roleID} -> ${group} failed: ${err instanceof Error ? err.stack : err}`)
+      logger.error(`Permission group assignment for role ${guildID}:${roleID} -> ${group} failed: ${errStack(err)}`)
       await ctx.send({
-        content: `${emoji.error} Permission group assignment failed: ${err instanceof Error ? err.message : err}`,
+        content: `${emoji.error} Permission group assignment failed: ${errMessage(err)}`,
         ephemeral: true
       })
       return
@@ -219,9 +219,9 @@ export default class ConfigCommand extends SlashCommand {
         }
       })
     } catch (err) {
-      logger.error(`Permission group assignment removal for role ${guildID}:${roleID} failed: ${err instanceof Error ? err.stack : err}`)
+      logger.error(`Permission group assignment removal for role ${guildID}:${roleID} failed: ${errStack(err)}`)
       await ctx.send({
-        content: `Failed to remove permission group assignment: ${err instanceof Error ? err.message : err}`,
+        content: `Failed to remove permission group assignment: ${errMessage(err)}`,
         ephemeral: true
       })
       return

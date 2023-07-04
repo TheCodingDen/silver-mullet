@@ -6,7 +6,7 @@ import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, Autocomp
 import discord from '../clients/discord'
 import prisma from '../clients/prisma'
 import emoji from '../utils/emoji'
-import { alphabetical, humanLikely } from '../utils/index'
+import { alphabetical, errMessage, errStack, humanLikely } from '../utils/index'
 import { getAssignedGuilds, handleCommand, run } from '../utils/commands'
 
 const fetchers = {
@@ -172,9 +172,9 @@ export default class IgnoreCommand extends SlashCommand {
         }
       })
     } catch (err) {
-      logger.error(`Ignore creating for ${entityType.toLowerCase()} ${discordEntity.id} failed: ${err instanceof Error ? err.stack : err}`)
+      logger.error(`Ignore creating for ${entityType.toLowerCase()} ${discordEntity.id} failed: ${errStack(err)}`)
       await ctx.send({
-        content: `Failed to create ignore, target is still not ignored: ${err instanceof Error ? err.message : err}`,
+        content: `Failed to create ignore, target is still not ignored: ${errMessage(err)}`,
         ephemeral: true
       })
       return
@@ -233,9 +233,9 @@ export default class IgnoreCommand extends SlashCommand {
         }
       })
     } catch (err) {
-      logger.error(`Ignore removal for ${found.type.toLowerCase()} ${found.snowflake} failed:\n${err instanceof Error ? err.stack : err}`)
+      logger.error(`Ignore removal for ${found.type.toLowerCase()} ${found.snowflake} failed:\n${errStack(err)}`)
       await ctx.send({
-        content: `Failed to remove ignore, target is still ignored: ${err instanceof Error ? err.message : err}`,
+        content: `Failed to remove ignore, target is still ignored: ${errMessage(err)}`,
         ephemeral: true
       })
       return
