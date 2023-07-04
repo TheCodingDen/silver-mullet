@@ -1,11 +1,10 @@
 import { PermissionGroup, Prisma } from '@prisma/client'
-import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, AutocompleteContext, AutocompleteChoice } from 'slash-create'
-import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
+import { SlashCommand, SlashCreator, CommandContext, CommandOptionType } from 'slash-create'
 import _ from 'lodash'
 import { isDiscordID } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
-import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
+import { errMessage, errStack } from '../utils'
 import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
@@ -43,8 +42,8 @@ export default class ConfigCommand extends SlashCommand {
               type: CommandOptionType.STRING,
               name: 'group',
               description: 'The permission group to assign for the given role.',
-              required: true,
-              autocomplete: true
+              choices: _.keys(PermissionGroup).map(group => ({ name: group, value: group })),
+              required: true
             }
           ]
         },
@@ -77,36 +76,6 @@ export default class ConfigCommand extends SlashCommand {
         [run]: this.remove.bind(this)
       }
     })
-  }
-
-  async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const { focused, options } = ctx
-
-    switch (focused) {
-      case 'group': {
-        const groups = [
-          { name: 'Root', value: PermissionGroup.ROOT },
-          { name: 'Infra Admin', value: PermissionGroup.INFRA_ADMIN },
-          { name: 'Admin', value: PermissionGroup.ADMIN },
-          { name: 'Moderator', value: PermissionGroup.MODERATOR }
-        ]
-
-        const input = options.assign.group as string
-
-        const likely = didYouMean(
-          input,
-          groups.map(group => group.name),
-          { returnType: ReturnTypeEnums.ALL_MATCHES }
-        )
-
-        return groups
-          .filter(mapping => humanLikely(input, likely, mapping.name))
-          .sort(alphabetical)
-      }
-      default:
-        logger.warn(`Unknown autocompletable field ${focused} for command '${this.commandName}'!`)
-        return []
-    }
   }
 
   private async get (ctx: CommandContext): Promise<void> {
@@ -147,7 +116,7 @@ export default class ConfigCommand extends SlashCommand {
 
   private async assign (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
-    const { role: roleID, group } = options.assign as { role: string, group: PermissionGroup }
+    const { role: roleID, group } = options.assign as { role: string, group: string }
 
     if (!guildID) {
       await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.', ctx)
@@ -159,7 +128,7 @@ export default class ConfigCommand extends SlashCommand {
       return
     }
 
-    if (!(group in PermissionGroup)) {
+    if (!isPermissionGroup(group)) {
       await sendFailure(`Invalid permission group. Valid permission groups are: ${_.keys(PermissionGroup).join(', ')}`, ctx)
       return
     }
@@ -222,4 +191,8 @@ export default class ConfigCommand extends SlashCommand {
       await sendFailure(`Failed to remove permission group assignment: ${errMessage(err)}`, ctx)
     }
   }
+}
+
+function isPermissionGroup (value: string): value is PermissionGroup {
+  return value in PermissionGroup
 }
