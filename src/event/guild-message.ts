@@ -4,8 +4,7 @@ import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import { Comparison, executeAntiSpamDetection } from '../detection/spam-detection'
 import actions from '../detection/actions'
 import assert from 'assert'
-import color from '../utils/color'
-import { messageLink } from '../utils/discordUtils'
+import { embedBase, messageLink } from '../utils/discordUtils'
 import _ from 'lodash'
 import prisma from '../clients/prisma'
 
@@ -153,6 +152,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
     await logChannel.send({
       embeds: [{
+        ...embedBase(),
         title: `Spam detected (@${message.author.username})`,
         description: `
           **Triggered by** (${messageLink({ guildId: guild.id, messageId: message.id, channelId: message.channel.id })}):
@@ -171,13 +171,7 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
             `)
             : ''
           }
-        `,
-        color: color.blurple,
-        timestamp: new Date().toISOString(),
-        footer: {
-          text: 'Silver Mullet',
-          icon_url: message.client.user?.avatarURL() ?? 'https://cdn.discordapp.com/embed/avatars/0.png'
-        }
+        `
       }]
     })
   }
