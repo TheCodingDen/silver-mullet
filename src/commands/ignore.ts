@@ -5,9 +5,8 @@ import _ from 'lodash'
 import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, AutocompleteContext, AutocompleteChoice } from 'slash-create'
 import discord from '../clients/discord'
 import prisma from '../clients/prisma'
-import { assertPermissionGroupMembership, getAssignedGuilds } from '../utils/discordUtils'
-import emoji from '../utils/emoji'
-import { alphabetical, humanLikely } from '../utils/index'
+import { alphabetical, errMessage, errStack, humanLikely } from '../utils/index'
+import { getAssignedGuilds, handleCommand, run, sendFailure, sendSuccess } from '../utils/commands'
 
 const fetchers = {
   CATEGORY: async (id: string, guild: Guild) => await guild.channels.fetch(id),
@@ -111,29 +110,21 @@ export default class IgnoreCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
-    if (!await assertPermissionGroupMembership([PermissionGroup.INFRA_ADMIN], ctx)) {
-      return
-    }
-
-    const { subcommands } = ctx
-
-    switch (subcommands[0]) {
-      case 'add':
-        await this.add(ctx)
-        break
-      case 'remove':
-        await this.remove(ctx)
-        break
-      default:
-        logger.warn(`Unknown subcommand ${subcommands[0]} for command '${this.commandName}'!`)
-        await ctx.send(`${emoji.error} No handler found for that subcommand.`, { ephemeral: true })
-    }
+    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN], {
+      add: {
+        [run]: this.add.bind(this)
+      },
+      remove: {
+        [run]: this.remove.bind(this)
+      }
+    })
   }
 
   private async add (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
+
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these ignored settings are being modified.`)
+      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these ignores are being modified.', ctx)
       return
     }
 
@@ -144,7 +135,7 @@ export default class IgnoreCommand extends SlashCommand {
     const entityId = role ?? channel
 
     if (!entityId) {
-      await ctx.send(`${emoji.error} Provide a channel or role.`, { ephemeral: true })
+      await sendFailure('Provide a channel or role.', ctx)
       return
     }
 
@@ -166,10 +157,7 @@ export default class IgnoreCommand extends SlashCommand {
     }
 
     if (!discordEntity || !entityType) {
-      await ctx.send({
-        content: `${emoji.error} Could not resolve ${entityId}. It may not exist or Discord may be having issues.`,
-        ephemeral: true
-      })
+      await sendFailure(`Could not resolve ${entityId}. It may not exist or Discord may be having issues.`, ctx)
       return
     }
 
@@ -180,28 +168,22 @@ export default class IgnoreCommand extends SlashCommand {
           type: entityType
         }
       })
+
+      const mention = discordEntity instanceof Role ? `<@&${entityId}>` : `<#${entityId}>`
+
+      logger.info(`${ctx.user.username} added ignore for ${mention} (${discordEntity.id})`)
+      await sendSuccess(`Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list.`, ctx)
     } catch (err) {
-      await ctx.send({
-        content: `Failed to create ignore, target is still not ignored: ${err instanceof Error ? err.message : err}`,
-        ephemeral: true
-      })
-      return
+      logger.error(`Ignore creating for ${entityType.toLowerCase()} ${discordEntity.id} failed: ${errStack(err)}`)
+      await sendFailure(`Failed to create ignore, target is still not ignored: ${errMessage(err)}`, ctx)
     }
-
-    const mention = discordEntity instanceof Role ? `<@&${entityId}>` : `<#${entityId}>`
-
-    logger.info(`${ctx.user.username} added ignore with name: ${discordEntity.name} (${discordEntity.id})`)
-
-    await ctx.send({
-      content: `${emoji.success} Added **${discordEntity.name}** (${mention}, ${entityId}) to the ignore list`,
-      ephemeral: true
-    })
   }
 
   private async remove (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
+
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these ignored settings are being modified.`)
+      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these ignores are being modified.', ctx)
       return
     }
 
@@ -216,21 +198,15 @@ export default class IgnoreCommand extends SlashCommand {
     })
 
     if (!found) {
-      await ctx.send({
-        // Should never happen
-        content: `${emoji.error} That entity could not found. This means either Discord gave us garbage, or the autocomplete implementation is bugged.`,
-        ephemeral: true
-      })
+      // Should never happen
+      await sendFailure('That entity could not found.', ctx)
       return
     }
 
     const discordEntity = await fetchers[found.type](found.snowflake, guild)
 
     if (!discordEntity) {
-      await ctx.send({
-        content: `${emoji.error} Could not resolve ${found.snowflake}. Is Discord experiencing issues?`,
-        ephemeral: true
-      })
+      await sendFailure(`Could not resolve ${found.snowflake}. Is Discord experiencing issues?`, ctx)
       return
     }
 
@@ -240,17 +216,12 @@ export default class IgnoreCommand extends SlashCommand {
           id: entityId
         }
       })
-    } catch (err) {
-      await ctx.send({
-        content: `Failed to remove ignore, target is still ignored: ${err instanceof Error ? err.message : err}`,
-        ephemeral: true
-      })
-      return
-    }
 
-    await ctx.send({
-      content: `${emoji.success} Ignore removed.`,
-      ephemeral: true
-    })
+      logger.info(`${ctx.user.username} removed an ignore for ${discordEntity.name} (${discordEntity.id})`)
+      await sendSuccess('Ignore removed.', ctx)
+    } catch (err) {
+      logger.error(`Ignore removal for ${found.type.toLowerCase()} ${found.snowflake} failed:\n${errStack(err)}`)
+      await sendFailure(`Failed to remove ignore, target is still ignored: ${errMessage(err)}`, ctx)
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { SlashCommand, SlashCreator, CommandContext } from 'slash-create'
 import client from '../clients/discord'
-import { getAssignedGuilds } from '../utils/discordUtils'
+import { getAssignedGuilds } from '../utils/commands'
 
 export default class PingCommand extends SlashCommand {
   constructor (creator: SlashCreator) {

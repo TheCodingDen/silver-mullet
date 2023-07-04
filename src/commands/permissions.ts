@@ -1,13 +1,10 @@
 import { PermissionGroup, Prisma } from '@prisma/client'
-import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, AutocompleteContext, AutocompleteChoice } from 'slash-create'
-import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
+import { SlashCommand, SlashCreator, CommandContext, CommandOptionType } from 'slash-create'
 import _ from 'lodash'
-import { assertPermissionGroupMembership, getAssignedGuilds, isDiscordID } from '../utils/discordUtils'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
-import emoji from '../utils/emoji'
-import { alphabetical, humanLikely } from '../utils'
-import { validateSubcommandTree, run } from '../utils/commands'
+import { errMessage, errStack } from '../utils'
+import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -44,8 +41,8 @@ export default class ConfigCommand extends SlashCommand {
               type: CommandOptionType.STRING,
               name: 'group',
               description: 'The permission group to assign for the given role.',
-              required: true,
-              autocomplete: true
+              choices: _.keys(PermissionGroup).map(group => ({ name: group, value: group })),
+              required: true
             }
           ]
         },
@@ -67,64 +64,17 @@ export default class ConfigCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
-    if (!await assertPermissionGroupMembership([PermissionGroup.INFRA_ADMIN], ctx)) {
-      return
-    }
-
-    const result = validateSubcommandTree(['permissions', ...ctx.subcommands], {
-      permissions: {
-        get: {
-          [run]: this.get.bind(this)
-        },
-        assign: {
-          [run]: this.assign.bind(this)
-        },
-        remove: {
-          [run]: this.remove.bind(this)
-        }
+    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN], {
+      get: {
+        [run]: this.get.bind(this)
+      },
+      assign: {
+        [run]: this.assign.bind(this)
+      },
+      remove: {
+        [run]: this.remove.bind(this)
       }
     })
-
-    if (!result.ok) {
-      logger.error(result.err)
-      await ctx.send({
-        content: `${emoji.error} ${result.humanReadableErr}`,
-        ephemeral: true
-      })
-      return
-    }
-
-    await result.node[run](ctx)
-  }
-
-  async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const { focused, options } = ctx
-
-    switch (focused) {
-      case 'group': {
-        const groups = [
-          { name: 'Root', value: PermissionGroup.ROOT },
-          { name: 'Infra Admin', value: PermissionGroup.INFRA_ADMIN },
-          { name: 'Admin', value: PermissionGroup.ADMIN },
-          { name: 'Moderator', value: PermissionGroup.MODERATOR }
-        ]
-
-        const input = options.assign.group as string
-
-        const likely = didYouMean(
-          input,
-          groups.map(group => group.name),
-          { returnType: ReturnTypeEnums.ALL_MATCHES }
-        )
-
-        return groups
-          .filter(mapping => humanLikely(input, likely, mapping.name))
-          .sort(alphabetical)
-      }
-      default:
-        logger.warn(`Unknown autocompletable field ${focused} for command '${this.commandName}'!`)
-        return []
-    }
   }
 
   private async get (ctx: CommandContext): Promise<void> {
@@ -168,17 +118,7 @@ export default class ConfigCommand extends SlashCommand {
     const { role: roleID, group } = options.assign as { role: string, group: PermissionGroup }
 
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.`)
-      return
-    }
-
-    if (!isDiscordID(roleID)) {
-      await ctx.send(`${emoji.error} Invalid role ID.`, { ephemeral: true })
-      return
-    }
-
-    if (!(group in PermissionGroup)) {
-      await ctx.send(`${emoji.error} Invalid permission group. Valid permission groups are: ${_.keys(PermissionGroup).join(', ')}`, { ephemeral: true })
+      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.', ctx)
       return
     }
 
@@ -196,17 +136,15 @@ export default class ConfigCommand extends SlashCommand {
           group
         }
       })
+
+      const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
+
+      logger.info(`${ctx.user.username} assigned role ${assigned?.name ?? roleID} to permission group ${group}`)
+      await sendSuccess(`Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, ctx)
     } catch (err) {
-      await ctx.send({
-        content: `${emoji.error} Permission group assignment failed: ${err instanceof Error ? err.message : err}`,
-        ephemeral: true
-      })
-      return
+      logger.error(`Permission group assignment for role ${guildID}:${roleID} -> ${group} failed: ${errStack(err)}`)
+      await sendFailure(`Permission group assignment failed: ${errMessage(err)}`, ctx)
     }
-
-    const assigned = client.guilds.cache.get(guildID)?.roles.cache.get(roleID)
-
-    await ctx.send(`${emoji.success} Assigned role **${assigned?.name ?? roleID}** to permission group **${group}**.`, { ephemeral: true })
   }
 
   private async remove (ctx: CommandContext): Promise<void> {
@@ -214,17 +152,12 @@ export default class ConfigCommand extends SlashCommand {
     const { role: roleID } = options.remove as { role: string }
 
     if (!guildID) {
-      await ctx.send(`${emoji.error} I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.`)
-      return
-    }
-
-    if (!isDiscordID(roleID)) {
-      await ctx.send(`${emoji.error} Invalid role ID.`, { ephemeral: true })
+      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.', ctx)
       return
     }
 
     if (!await prisma.permissionGroupMapping.findFirst({ where: { roleID } })) {
-      await ctx.send(`${emoji.error} That role is not assigned to a permission group.`, { ephemeral: true })
+      await sendFailure('That role is not assigned to a permission group.', ctx)
       return
     }
 
@@ -234,14 +167,12 @@ export default class ConfigCommand extends SlashCommand {
           roleID
         }
       })
-    } catch (err) {
-      await ctx.send({
-        content: `Failed to remove permission group assignment: ${err instanceof Error ? err.message : err}`,
-        ephemeral: true
-      })
-      return
-    }
 
-    await ctx.send(`${emoji.success} Permission group asssignment removed.`, { ephemeral: true })
+      logger.info(`${ctx.user.username} removed permission group assignment for role ${roleID}`)
+      await sendSuccess('Permission group assignment removed.', ctx)
+    } catch (err) {
+      logger.error(`Permission group assignment removal for role ${guildID}:${roleID} failed: ${errStack(err)}`)
+      await sendFailure(`Failed to remove permission group assignment: ${errMessage(err)}`, ctx)
+    }
   }
 }
