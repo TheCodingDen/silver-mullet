@@ -42,9 +42,8 @@ model CrossChannelAntiSpamSettings {
   shortMessageLength              Int
   shortMessageSimilarityThreshold Int
   similarityThreshold             Int
-  maxTimeDiffMinutes              Int
+  cacheTTLSeconds                 Int
   maxSizeDiffPercentage           Int
-  pointRequirement                Int
   pointsOnMatch                   Int
 
   pointOverrides PointOverride[]         @relation("pointOverrides")

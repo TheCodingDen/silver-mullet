@@ -51,6 +51,19 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
+  const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+    orderBy: {
+      version: 'desc'
+    }
+  })
+
+  // Allow ignore handling, but disallow caching. Even though fetching could occur, it makes no sense to proceed here
+  // because without settings we will have to abort anyways
+  if (!settings) {
+    logger.error('Cannot continue to caching stage of message handler without CCAS settings present')
+    return
+  }
+
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
   const authorMessages = await fetchMessagesByAuthor(message.author.id)
@@ -64,7 +77,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  await addMessage(messageToCache)
+  await addMessage(messageToCache, settings.cacheTTLSeconds)
 
   logger.debug('Entering anti spam detection')
 
