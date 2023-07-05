@@ -8,7 +8,7 @@ import { Comparison, DetectionResult } from './spam-detection'
 
 export async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
-    throw new Error(`${name} channel was not set in the environment`)
+    throw new Error(`${name} channel ID was not set`)
   }
 
   const channel = await guild.channels.fetch(id)
@@ -61,7 +61,7 @@ export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
       const queueMessage = await queueChannel.messages.fetch(queuedAction.queueMessageId)
       await queueMessage.edit({
         embeds: [{
-          ...defaultLogEmbed(message, result),
+          ...makeDefaultEmbed(message, result),
           title: `Suspicious activity detected (@${message.author.username})`,
           color: color.yellow
         }],
@@ -77,7 +77,7 @@ export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
 
     const queueMessage = await queueChannel.send({
       embeds: [{
-        ...defaultLogEmbed(message, result),
+        ...makeDefaultEmbed(message, result),
         title: `Suspicious activity detected (@${message.author.username})`,
         color: color.yellow
       }],
@@ -99,7 +99,7 @@ export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
   }
 }
 
-export function defaultLogEmbed (message: Message<true>, result: DetectionResult): APIEmbed {
+export function makeDefaultEmbed (message: Message<true>, result: DetectionResult): APIEmbed {
   const { action, comparisons, totalPoints } = result
 
   // Use the (up to) 10 most similar matches, with most similar ranked first

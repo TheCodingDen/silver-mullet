@@ -1,5 +1,5 @@
 import { AntiSpamAction } from '@prisma/client'
-import { Guild, GuildMember, Message } from 'discord.js'
+import { Guild, GuildMember, Message, MessageEditOptions, MessageReplyOptions } from 'discord.js'
 import { ComponentContext, SlashCreator } from 'slash-create'
 import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMessageId, removeQueuedAction } from '../cache/op'
 import client from '../clients/discord'
@@ -7,7 +7,7 @@ import { QueuedAction } from '../clients/redis'
 import color from '../utils/color'
 import { errStack } from '../utils/index'
 import { DetectionResult } from './spam-detection'
-import { defaultLogEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
+import { makeDefaultEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
@@ -26,12 +26,9 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     const queuedAction = await fetchQueuedActionByAuthorId(member.id)
     if (queuedAction) {
       logger.debug(`Updating embed for author ${member.id} to ban`)
-      const queueChannel = await getQueueChannel(message.guild)
-      const queueMessage = await queueChannel.messages.fetch(queuedAction.queueMessageId)
-
-      await queueMessage.edit({
+      await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
-          ...defaultLogEmbed(message, result),
+          ...makeDefaultEmbed(message, result),
           title: `Automatically upgraded to ban, spam detected (@${member.user.username})`,
           color: color.red
         }],
@@ -39,14 +36,14 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
           disabled: true,
           confirmAction: 'ban'
         })]
-      })
+      }))
       // Expire it soon, but not immediately, so that any pending actions will be able to see that there's
       // a queued action waiting and abort accordingly
       await expireQueuedAction(queuedAction)
     } else {
       const logChannel = await getLogChannel(message.guild)
       await logChannel.send({
-        embeds: [defaultLogEmbed(message, result)]
+        embeds: [makeDefaultEmbed(message, result)]
       })
     }
   },
@@ -62,33 +59,29 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     const queuedAction = await fetchQueuedActionByMessageId(member.id)
     if (queuedAction) {
       logger.debug(`Updating embed for author ${member.id} to kick`)
-      const queueChannel = await getQueueChannel(message.guild)
-      const queueMessage = await queueChannel.messages.fetch(queuedAction.queueMessageId)
-
-      await queueMessage.edit({
+      await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
-          ...defaultLogEmbed(message, result),
+          ...makeDefaultEmbed(message, result),
           title: `Automatically upgraded to kick, spam detected (@${member.user.username})`,
           color: color.red
         }],
         components: [makeComponents({
           disabled: true,
-          confirmAction: 'kick'
+          confirmAction: 'ban'
         })]
-      })
+      }))
       // Expire it soon, but not immediately, so that any pending actions will be able to see that there's
       // a queued action waiting and abort accordingly
       await expireQueuedAction(queuedAction)
     } else {
       const logChannel = await getLogChannel(message.guild)
       await logChannel.send({
-        embeds: [defaultLogEmbed(message, result)]
+        embeds: [makeDefaultEmbed(message, result)]
       })
     }
   },
   QUEUE_BAN: makeQueueCallback('ban'),
   QUEUE_KICK: makeQueueCallback('kick')
-
 }
 
 type WrappedComponentCallback = (ctx: ComponentContext, guild: Guild, moderator: GuildMember, author: GuildMember, action: QueuedAction) => Promise<void>
@@ -125,16 +118,14 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
       assertValue(author, `Could not fetch author ${queuedAction.authorId}`, ctx)
 
       await cb(ctx, guild, member, author, queuedAction)
-    })().catch(err => logger.error(errStack(err)))
+    })().catch(err => logger.error(`Error running component callback:\n${errStack(err)}`))
   }
 }
 
 export function initActionComponents (creator: SlashCreator): void {
   creator.registerGlobalComponent('confirm', makeComponentCallback(async (ctx, guild, moderator, author, queuedAction) => {
-    const { queueMessageId, originalMessageId, originalChannelId, upgradeTo } = queuedAction
+    const { upgradeTo } = queuedAction
     logger.debug(`Confirming ${upgradeTo} of ${author.id} by moderator ${moderator.id}`)
-
-    const queueChannel = await getQueueChannel(guild)
 
     if (process.env.NODE_ENV === 'production') {
       if (upgradeTo === 'ban') {
@@ -147,34 +138,22 @@ export function initActionComponents (creator: SlashCreator): void {
         throw new Error(`Unactionable action ${upgradeTo}`)
       }
     } else {
-      try {
-        const originalChannel = await getChannel(guild, 'orignal', originalChannelId)
-        const originalMessage = await originalChannel.messages.fetch(originalMessageId)
-        await originalMessage.reply({
-          content: `Action upgraded to: ${upgradeTo}`
-        })
-      } catch (err) {
-        logger.warn(`Failed to fetch/reply to original action with upgradeTo = ${upgradeTo}\n${errStack(err)}`)
-      }
-    }
-
-    try {
-      const queueMessage = await queueChannel.messages.fetch(queueMessageId)
-
-      await queueMessage.edit({
-        embeds: [{
-          ...queueMessage.embeds[0].data,
-          title: `Moderator (@${moderator.user.username}) approved ${upgradeTo}, spam detected (@${author.user.username})`,
-          color: color.red
-        }],
-        components: [makeComponents({
-          disabled: true,
-          confirmAction: upgradeTo
-        })]
+      await replyToOriginalMessage(queuedAction, guild, {
+        content: `Action upgraded to: ${upgradeTo}`
       })
-    } catch (err) {
-      logger.warn(`Queue message ${queueMessageId} was not found, presumably it was deleted, ignoring`)
     }
+
+    await updateQueueMessage(queuedAction, guild, queueMessage => ({
+      embeds: [{
+        ...queueMessage.embeds[0].data,
+        title: `Moderator (@${moderator.user.username}) approved ${upgradeTo}, spam detected (@${author.user.username})`,
+        color: color.red
+      }],
+      components: [makeComponents({
+        disabled: true,
+        confirmAction: upgradeTo
+      })]
+    }))
 
     await removeQueuedAction(queuedAction)
 
@@ -186,44 +165,54 @@ export function initActionComponents (creator: SlashCreator): void {
   creator.registerGlobalComponent('cancel', makeComponentCallback(async (ctx, guild, moderator, author, queuedAction) => {
     await removeQueuedAction(queuedAction)
 
-    const { queueMessageId, originalMessageId, originalChannelId, upgradeTo } = queuedAction
+    const { upgradeTo } = queuedAction
     logger.debug(`Cancelling ${upgradeTo} of ${author.id} by moderator ${moderator.id}`)
 
-    const queueChannel = await getQueueChannel(guild)
-
     if (process.env.NODE_ENV !== 'production') {
-      try {
-        const originalChannel = await getChannel(guild, 'orignal', originalChannelId)
-        const originalMessage = await originalChannel.messages.fetch(originalMessageId)
-        await originalMessage.reply({
-          content: `Action ${upgradeTo} cancelled`
-        })
-      } catch (err) {
-        logger.warn(`Failed to fetch/reply to original action with upgradeTo = ${upgradeTo}\n${errStack(err)}`)
-      }
-    }
-    try {
-      const queueMessage = await queueChannel.messages.fetch(queueMessageId)
-
-      await queueMessage.edit({
-        embeds: [{
-          ...queueMessage.embeds[0].data,
-          title: `Moderator (@${moderator.user.username}) cancelled ${upgradeTo} for (@${author.user.username})`,
-          color: color.grey
-        }],
-        components: [makeComponents({
-          disabled: true,
-          confirmAction: upgradeTo
-        })]
+      await replyToOriginalMessage(queuedAction, guild, {
+        content: `Action ${upgradeTo} cancelled`
       })
-    } catch (err) {
-      logger.warn(`Queue message ${queueMessageId} was not found, presumably it was deleted, ignoring`)
     }
+
+    await updateQueueMessage(queuedAction, guild, queueMessage => ({
+      embeds: [{
+        ...queueMessage.embeds[0].data,
+        title: `Moderator (@${moderator.user.username}) cancelled ${upgradeTo} for (@${author.user.username})`,
+        color: color.grey
+      }],
+      components: [makeComponents({
+        disabled: true,
+        confirmAction: upgradeTo
+      })]
+    }))
 
     await ctx.send('Cancelled the action', {
       ephemeral: true
     })
   }))
+}
+
+async function replyToOriginalMessage (queuedAction: QueuedAction, guild: Guild, message: MessageReplyOptions): Promise<void> {
+  const { originalChannelId, originalMessageId, upgradeTo } = queuedAction
+  try {
+    const originalChannel = await getChannel(guild, 'orignal', originalChannelId)
+    const originalMessage = await originalChannel.messages.fetch(originalMessageId)
+    await originalMessage.reply(message)
+  } catch (err) {
+    logger.warn(`Failed to fetch/reply to original action with upgradeTo = ${upgradeTo}\n${errStack(err)}`)
+  }
+}
+
+async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, newMessage: (queueMessage: Message) => MessageEditOptions): Promise<void> {
+  const { queueMessageId } = queuedAction
+
+  const queueChannel = await getQueueChannel(guild)
+  try {
+    const queueMessage = await queueChannel.messages.fetch(queueMessageId)
+    await queueMessage.edit(newMessage(queueMessage))
+  } catch (err) {
+    logger.warn(`Queue message ${queueMessageId} was not found, presumably it was deleted, ignoring`)
+  }
 }
 
 export default actions
