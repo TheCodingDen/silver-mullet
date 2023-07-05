@@ -61,7 +61,6 @@ export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
     const queuedAction = await fetchQueuedActionByAuthorId(message.author.id)
     if (queuedAction) {
       const actionCreatedDelta = Date.now() - queuedAction.createdAt
-      console.log(actionCreatedDelta, newActionPostThresholdMillis)
 
       // Not a new post, update the existing one
       if (actionCreatedDelta < newActionPostThresholdMillis) {
