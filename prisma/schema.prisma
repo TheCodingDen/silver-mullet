@@ -53,7 +53,8 @@ model CrossChannelAntiSpamSettings {
 enum AntiSpamAction {
   BAN
   KICK
-  QUEUE
+  QUEUE_BAN
+  QUEUE_KICK
 }
 
 model AntiSpamActionMapping {

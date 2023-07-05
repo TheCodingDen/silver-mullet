@@ -1,20 +1,20 @@
 import { Message } from 'discord.js'
-import Nilsimsa from '../vendor/nilsimsa'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
-import { Comparison, executeAntiSpamDetection } from '../detection/spam-detection'
-import actions from '../detection/actions'
-import assert from 'assert'
-import { embedBase, messageLink } from '../utils/discordUtils'
-import _ from 'lodash'
 import prisma from '../clients/prisma'
+import actions from '../detection/actions'
+import { executeAntiSpamDetection } from '../detection/spam-detection'
+import { errStack } from '../utils/index'
+import Nilsimsa from '../vendor/nilsimsa'
+
+// Store currently executing actions per user, so that we get order between actions as to avoid collision
+const actionPromises = new Map<string, Promise<unknown>>()
 
 export async function onGuildMessage (message: Message): Promise<void> {
-  if (message.author.bot || message.channel.isDMBased() || !message.guild) {
+  if (message.author.bot || message.channel.isDMBased() || !message.inGuild()) {
     return
   }
 
   const member = await message.guild.members.fetch(message.author.id)
-  const { guild } = message
 
   // Declare all conditions for the DB to check against
   // will search channels, categories, and roles.
@@ -81,7 +81,8 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   logger.debug('Entering anti spam detection')
 
-  const { action, averageSimilarity, totalPoints, comparisons } = await executeAntiSpamDetection(messageToCache, authorMessages)
+  const antiSpamResult = await executeAntiSpamDetection(messageToCache, authorMessages)
+  const { action, averageSimilarity, comparisons } = antiSpamResult
 
   logger.debug(
     `action: ${action}, average similarity: ${averageSimilarity}, original-content: ${message.content.substring(0, 10)}`
@@ -97,19 +98,30 @@ export async function onGuildMessage (message: Message): Promise<void> {
   if (action !== 'NOTHING') {
     const actionFn = actions[action]
 
+    const runningAction = actionPromises.get(member.id)
+
+    // Run this as late as possible before executing the new action, so that we do not miss it
+    if (runningAction) {
+      try {
+        logger.debug(`Waiting for already executing action to complete on user ${member.id}`)
+        await runningAction
+        logger.debug(`Executing existing action completed on user ${member.id}, proceding with next action`)
+      } catch (err) {
+        // Log, but proceed with our event
+        logger.error(`Error whilst waiting for already executing action on user ${member.id}\n${errStack(err)}`)
+      }
+    }
+
     let actionComplete = false
     let tries = 3
 
     while (!actionComplete && tries !== 0) {
       try {
-        if (process.env.NODE_ENV !== 'production') {
-          await message.reply({
-            content: `Action taken: ${action}`
-          })
-        } else {
-          await actionFn(member)
-        }
+        const promise = actionFn(member, message, antiSpamResult)
+        actionPromises.set(member.id, promise)
+        await promise
         actionComplete = true
+        actionPromises.delete(member.id)
       } catch (err) {
         logger.warn(`Failed to ${action} member (${tries} tries left):\n${err}`)
       }
@@ -117,76 +129,6 @@ export async function onGuildMessage (message: Message): Promise<void> {
       tries--
     }
 
-    const { DISCORD_LOG_CHANNEL: logChannelId } = process.env
-    assert(logChannelId !== undefined, 'log channel was not set in the environment')
-
-    const logChannel = await message.guild.channels.fetch(logChannelId)
-    if (!logChannel) {
-      logger.error(`Log channel (${logChannelId}) cannot be found, does it exist in guild ${message.guild.id} (${message.guild.name})?`)
-      return
-    }
-    if (!logChannel.isTextBased() || logChannel.isDMBased()) {
-      logger.error(`Log channel ${logChannelId} is not text based or is a DM`)
-      return
-    }
-
-    // Use the (up to) 10 most similar matches, with most similar ranked first
-    const cacheHitsToUse = comparisons.sort((a, b) => b.similarityToPostedContent - a.similarityToPostedContent).slice(0, 10)
-    const averageSimilarityOfUsed = _.mean(cacheHitsToUse.map((val) => val.similarityToPostedContent))
-
-    const formatCacheHit = (c: Comparison): string => {
-      const link = messageLink({ ...c.comparedContent, guildId: guild.id })
-      const content = _.truncate(c.comparedContent.content, { length: 30 }) || '<no-content>'
-      const { pointsFromMatches: matches, pointsFromSimilarity: similarity } = c
-
-      let pointString
-
-      if (matches) {
-        pointString = `^ scored **${matches.highestRankingMatch}** points from matches, with highest matching word "**${matches.highestRankingString}**"`
-        if (similarity) {
-          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did pass the threshold of **${similarity.thresholdBroken}** 
-          and scored **${similarity.pointsGained}** points`
-        } else {
-          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did not pass any similarity thresholds.`
-        }
-        pointString += `\nall matches were ${matches.matches.map(m => `**${m}**`).join() || '[none]'}`
-      } else {
-        pointString = '^ no points from matches '
-        if (similarity) {
-          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did pass the threshold of **${similarity.thresholdBroken}**
-          and scored **${similarity.pointsGained}** points`
-        } else {
-          pointString += `\nsimilarity of **${c.similarityToPostedContent}** to triggering message, which did not pass any similarity thresholds.`
-        }
-      }
-
-      return `"${content}" (${link}):\n${pointString}`
-    }
-
-    await logChannel.send({
-      embeds: [{
-        ...embedBase(),
-        title: `Spam detected (@${message.author.username})`,
-        description: `
-          **Triggered by** (${messageLink({ guildId: guild.id, messageId: message.id, channelId: message.channel.id })}):
-          \`\`\`
-${message.content.trimStart().trimEnd() || '<no-content>'}
-          \`\`\` 
-          **Action taken**:
-          ${action}
-          ${cacheHitsToUse.length
-            ? (`
-              **Other messages (${cacheHitsToUse.length})**:
-              Average similarity: __${averageSimilarityOfUsed.toPrecision(3)}__ 
-              Total point count: __${totalPoints}__
-
-              ${cacheHitsToUse.map(formatCacheHit).join('\n\n')}
-            `)
-            : ''
-          }
-        `
-      }]
-    })
+    logger.debug('Anti spam finished')
   }
-  logger.debug('Anti spam finished')
 }
