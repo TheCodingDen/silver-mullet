@@ -46,8 +46,8 @@ model CrossChannelAntiSpamSettings {
   maxSizeDiffPercentage           Int
   pointsOnMatch                   Int
 
-  pointOverrides PointOverride[]         @relation("pointOverrides")
-  actionMappings AntiSpamActionMapping[] @relation("actionMappings")
+  pointOverrides PointOverride[] @relation("pointOverrides")
+  rules          AntiSpamRule[]  @relation("rules")
 }
 
 enum AntiSpamAction {
@@ -57,14 +57,25 @@ enum AntiSpamAction {
   QUEUE_KICK
 }
 
-model AntiSpamActionMapping {
-  id      String          @id @default(cuid())
+enum AntiSpamType {
+  FILTER
+  SPAM
+}
 
-  points Int
-  action AntiSpamAction
+model AntiSpamRule {
+  id String @id @default(cuid())
 
-  settings        CrossChannelAntiSpamSettings? @relation("actionMappings", fields: [settingsVersion], references: [version], onDelete: Cascade)
+  points      Int
+  description String?
+  action      AntiSpamAction
+  type        AntiSpamType
+
+  settings        CrossChannelAntiSpamSettings? @relation("rules", fields: [settingsVersion], references: [version], onDelete: Cascade)
   settingsVersion Int?
+
+  parentId String?
+  parent   AntiSpamRule?  @relation("parentId", fields: [parentId], references: [id])
+  children  AntiSpamRule[] @relation("parentId")
 }
 
 model PointOverride {
