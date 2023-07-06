@@ -15,7 +15,7 @@ describe('Keyword detection', () => {
   })
 
   beforeEach(async () => {
-    await prisma.antiSpamActionMapping.deleteMany({})
+    await prisma.antiSpamRule.deleteMany({})
     await prisma.pointOverride.deleteMany({})
 
     await prisma.crossChannelAntiSpamSettings.upsert({
@@ -28,10 +28,15 @@ describe('Keyword detection', () => {
         shortMessageLength: 15,
         shortMessageSimilarityThreshold: 80,
         similarityThreshold: 128,
-        actionMappings: {
-          create: {
-            points: 5,
-            action: 'BAN'
+        rules: {
+          createMany: {
+            data: [
+              {
+                points: 5,
+                action: 'BAN',
+                type: 'SPAM'
+              }
+            ]
           }
         },
         pointOverrides: {
@@ -58,10 +63,15 @@ describe('Keyword detection', () => {
         shortMessageLength: 15,
         shortMessageSimilarityThreshold: 80,
         similarityThreshold: 128,
-        actionMappings: {
-          create: {
-            points: 5,
-            action: 'BAN'
+        rules: {
+          createMany: {
+            data: [
+              {
+                points: 5,
+                action: 'BAN',
+                type: 'SPAM'
+              }
+            ]
           }
         },
         pointOverrides: {
