@@ -58,4 +58,4 @@ void (async () => {
   initActionComponents(creator)
 
   logger.info('Startup process complete.')
-})().catch(logger.error)
+})().catch(err => logger.error(err))
