@@ -73,7 +73,7 @@ export async function executeAntiSpamDetection (
     },
     include: {
       pointOverrides: true,
-      actionMappings: true
+      rules: true
     }
   })
 
@@ -81,7 +81,20 @@ export async function executeAntiSpamDetection (
     throw new Error('cannot compute anti spam results without settings present in the database')
   }
 
-  const { pointOverrides, actionMappings, maxSizeDiffPercentage, minMessageLength } = settings
+  const { pointOverrides, rules, maxSizeDiffPercentage, minMessageLength } = settings
+
+  const spamRules = rules.filter(r => r.type === 'SPAM')
+
+  if (!spamRules.length) {
+    // Just abort here, we will not be able to action anything anyways
+    logger.warn('No spam rules defined, no action can be taken')
+    return {
+      action: 'NOTHING',
+      averageSimilarity: 0,
+      totalPoints: 0,
+      comparisons: []
+    }
+  }
 
   if (postedContent.content.length < minMessageLength) {
     return {
@@ -140,7 +153,7 @@ export async function executeAntiSpamDetection (
     )
 
   const points = pointResults.reduce((acc, val) => acc + val, 0)
-  const actions = actionMappings.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
+  const actions = spamRules.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
   const chosenAction = DetectionAction[actions[0]?.action] ?? DetectionAction.NOTHING
 
   return {
