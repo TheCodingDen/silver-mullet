@@ -29,7 +29,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
           ...makeDefaultEmbed(message, result),
-          title: `Automatically upgraded to ban, spam detected (@${member.user.username})`,
+          title: 'Automatically upgraded to ban, spam detected',
           color: color.red
         }],
         components: [makeComponents({
@@ -62,7 +62,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
           ...makeDefaultEmbed(message, result),
-          title: `Automatically upgraded to kick, spam detected (@${member.user.username})`,
+          title: 'Automatically upgraded to kick, spam detected',
           color: color.red
         }],
         components: [makeComponents({
@@ -146,8 +146,12 @@ export function initActionComponents (creator: SlashCreator): void {
     await updateQueueMessage(queuedAction, guild, queueMessage => ({
       embeds: [{
         ...queueMessage.embeds[0].data,
-        title: `Moderator (@${moderator.user.username}) approved ${upgradeTo}, spam detected (@${author.user.username})`,
-        color: color.red
+        title: `Moderator approved ${upgradeTo}`,
+        color: color.red,
+        footer: {
+          text: `Actioned by @${moderator.user.username}`,
+          icon_url: moderator.user.displayAvatarURL()
+        }
       }],
       components: [makeComponents({
         disabled: true,
@@ -177,8 +181,12 @@ export function initActionComponents (creator: SlashCreator): void {
     await updateQueueMessage(queuedAction, guild, queueMessage => ({
       embeds: [{
         ...queueMessage.embeds[0].data,
-        title: `Moderator (@${moderator.user.username}) cancelled ${upgradeTo} for (@${author.user.username})`,
-        color: color.grey
+        title: `Moderator cancelled ${upgradeTo}`,
+        color: color.grey,
+        footer: {
+          text: `Cancelled by @${moderator.user.username}`,
+          icon_url: moderator.user.displayAvatarURL()
+        }
       }],
       components: [makeComponents({
         disabled: true,

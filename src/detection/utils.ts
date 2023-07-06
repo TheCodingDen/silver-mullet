@@ -62,7 +62,7 @@ export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
       await queueMessage.edit({
         embeds: [{
           ...makeDefaultEmbed(message, result),
-          title: `Suspicious activity detected (@${message.author.username})`,
+          title: 'Suspicious activity detected',
           color: color.yellow
         }],
         components: [makeComponents({
@@ -78,7 +78,7 @@ export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
     const queueMessage = await queueChannel.send({
       embeds: [{
         ...makeDefaultEmbed(message, result),
-        title: `Suspicious activity detected (@${message.author.username})`,
+        title: 'Suspicious activity detected',
         color: color.yellow
       }],
       components: [makeComponents({
@@ -137,8 +137,12 @@ export function makeDefaultEmbed (message: Message<true>, result: DetectionResul
 
   return {
     ...embedBase(),
-    title: `Spam detected (@${message.author.username})`,
+    title: 'Spam detected',
     color: color.red,
+    author: {
+      name: `@${message.author.username}`,
+      icon_url: message.author.displayAvatarURL()
+    },
     description: `
           **Triggered by** (${messageLink({ guildId: message.guild.id, messageId: message.id, channelId: message.channel.id })}):
           \`\`\`
