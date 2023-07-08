@@ -23,12 +23,14 @@ export interface CachedMessage extends Entity {
   hexHash: string
 }
 
+export type ActionUpgradeTo = 'kick' | 'ban'
 export interface QueuedAction extends Entity {
   authorId: string
   queueMessageId: string
   originalMessageId: string
   originalChannelId: string
-  upgradeTo: 'kick' | 'ban'
+  createdAt: number
+  upgradeTo: ActionUpgradeTo
 }
 
 export const messageSchema = new Schema('message', {
@@ -44,7 +46,8 @@ export const queuedActionSchema = new Schema('queuedAction', {
   queueMessageId: { type: 'string' },
   originalMessageId: { type: 'string' },
   originalChannelId: { type: 'string' },
-  upgradeTo: { type: 'text' }
+  upgradeTo: { type: 'text' },
+  createdAt: { type: 'number', sortable: true }
 })
 
 export const messageRepository = new Repository(messageSchema, redis)

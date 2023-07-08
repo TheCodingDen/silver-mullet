@@ -52,25 +52,37 @@ export function makeComponents ({ disabled, confirmAction }: MakeComponentOpts):
   return row
 }
 
+// Allow new posts to be queued to the action queue by the same user after one hour
+const newActionPostThresholdMillis = 1000 * 60 * 60
+
 export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
   return async (member, message, result) => {
     const queuedAction = await fetchQueuedActionByAuthorId(message.author.id)
     if (queuedAction) {
-      logger.debug(`Updating queued message for ${message.author.id}`)
-      const queueChannel = await getQueueChannel(message.guild)
-      const queueMessage = await queueChannel.messages.fetch(queuedAction.queueMessageId)
-      await queueMessage.edit({
-        embeds: [{
-          ...makeDefaultEmbed(message, result),
-          title: 'Suspicious activity detected',
-          color: color.yellow
-        }],
-        components: [makeComponents({
-          disabled: false,
-          confirmAction: action
-        })]
-      })
-      return
+      const actionCreatedDelta = Date.now() - queuedAction.createdAt
+      console.log(actionCreatedDelta, newActionPostThresholdMillis)
+
+      // Not a new post, update the existing one
+      if (actionCreatedDelta < newActionPostThresholdMillis) {
+        logger.debug(`Updating queued message for ${message.author.id}`)
+        const queueChannel = await getQueueChannel(message.guild)
+        const queueMessage = await queueChannel.messages.fetch(queuedAction.queueMessageId)
+        await queueMessage.edit({
+          embeds: [{
+            ...makeDefaultEmbed(message, result),
+            title: 'Suspicious activity detected',
+            color: color.yellow
+          }],
+          components: [makeComponents({
+            disabled: false,
+            confirmAction: action
+          })]
+        })
+
+        return
+      }
+
+      // Otherwise, proceed into making a new action in the queue
     }
 
     const queueChannel = await getQueueChannel(message.guild)
@@ -94,7 +106,8 @@ export function makeQueueCallback (action: 'kick' | 'ban'): ActionFunction {
       queueMessageId: queueMessage.id,
       originalMessageId: message.id,
       originalChannelId: message.channel.id,
-      upgradeTo: action
+      upgradeTo: action,
+      createdAt: Date.now()
     })
   }
 }
