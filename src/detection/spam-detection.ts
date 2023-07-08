@@ -1,9 +1,16 @@
-import { AntiSpamAction, CrossChannelAntiSpamSettings } from '@prisma/client'
+import { CrossChannelAntiSpamSettings } from '@prisma/client'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
 
-export type DetectionAction = AntiSpamAction | 'NOTHING'
+export enum DetectionAction {
+  BAN = 'BAN',
+  KICK = 'KICK',
+  QUEUE_BAN = 'QUEUE_BAN',
+  QUEUE_KICK = 'QUEUE_KICK',
+  NOTHING = 'NOTHING',
+}
+
 export type MatchWeights = Record<string, number>
 
 /**
@@ -78,7 +85,7 @@ export async function executeAntiSpamDetection (
 
   if (postedContent.content.length < minMessageLength) {
     return {
-      action: 'NOTHING',
+      action: DetectionAction.NOTHING,
       averageSimilarity: 0,
       totalPoints: 0,
       comparisons: []
@@ -134,7 +141,7 @@ export async function executeAntiSpamDetection (
 
   const points = pointResults.reduce((acc, val) => acc + val, 0)
   const actions = actionMappings.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
-  const chosenAction = actions[0]?.action ?? 'NOTHING'
+  const chosenAction = DetectionAction[actions[0]?.action] ?? DetectionAction.NOTHING
 
   return {
     action: chosenAction,

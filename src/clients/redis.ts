@@ -23,14 +23,17 @@ export interface CachedMessage extends Entity {
   hexHash: string
 }
 
-export type ActionUpgradeTo = 'kick' | 'ban'
+export enum ActionUpgrade {
+  BAN = 'ban',
+  KICK = 'kick'
+}
 export interface QueuedAction extends Entity {
   authorId: string
   queueMessageId: string
   originalMessageId: string
   originalChannelId: string
   createdAt: number
-  upgradeTo: ActionUpgradeTo
+  upgradeTo: ActionUpgrade
 }
 
 export const messageSchema = new Schema('message', {

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, APIEmbed, ButtonBuilder, ButtonStyle, Guild, Message, TextBasedChannel } from 'discord.js'
 import _ from 'lodash'
 import { addQueuedAction, fetchQueuedActionByAuthorId } from '../cache/op'
-import { ActionUpgradeTo } from '../clients/redis'
+import { ActionUpgrade } from '../clients/redis'
 import color from '../utils/color'
 import { embedBase, messageLink } from '../utils/discordUtils'
 import { ActionFunction } from './actions'
@@ -33,7 +33,7 @@ export async function getQueueChannel (guild: Guild): Promise<TextBasedChannel> 
 
 interface MakeComponentOpts {
   disabled: boolean
-  confirmAction: ActionUpgradeTo
+  confirmAction: ActionUpgrade
 }
 export function makeComponents ({ disabled, confirmAction }: MakeComponentOpts): ActionRowBuilder<ButtonBuilder> {
   const confirm = new ButtonBuilder()
@@ -56,7 +56,7 @@ export function makeComponents ({ disabled, confirmAction }: MakeComponentOpts):
 // Allow new posts to be queued to the action queue by the same user after one hour
 const newActionPostThresholdMillis = 1000 * 60 * 60
 
-export function makeQueueCallback (action: ActionUpgradeTo): ActionFunction {
+export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
   return async (member, message, result) => {
     const queuedAction = await fetchQueuedActionByAuthorId(message.author.id)
     if (queuedAction) {

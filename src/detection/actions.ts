@@ -3,7 +3,7 @@ import { Guild, GuildMember, Message, MessageEditOptions, MessageReplyOptions } 
 import { ComponentContext, SlashCreator } from 'slash-create'
 import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMessageId, removeQueuedAction } from '../cache/op'
 import client from '../clients/discord'
-import { QueuedAction } from '../clients/redis'
+import { ActionUpgrade, QueuedAction } from '../clients/redis'
 import color from '../utils/color'
 import { sendFailure, sendSuccess } from '../utils/commands'
 import { errStack } from '../utils/index'
@@ -35,7 +35,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
         }],
         components: [makeComponents({
           disabled: true,
-          confirmAction: 'ban'
+          confirmAction: ActionUpgrade.BAN
         })]
       }))
       // Expire it soon, but not immediately, so that any pending actions will be able to see that there's
@@ -68,7 +68,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
         }],
         components: [makeComponents({
           disabled: true,
-          confirmAction: 'ban'
+          confirmAction: ActionUpgrade.KICK
         })]
       }))
       // Expire it soon, but not immediately, so that any pending actions will be able to see that there's
@@ -81,8 +81,8 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       })
     }
   },
-  QUEUE_BAN: makeQueueCallback('ban'),
-  QUEUE_KICK: makeQueueCallback('kick')
+  QUEUE_BAN: makeQueueCallback(ActionUpgrade.BAN),
+  QUEUE_KICK: makeQueueCallback(ActionUpgrade.KICK)
 }
 
 type WrappedComponentCallback = (ctx: ComponentContext, guild: Guild, moderator: GuildMember, author: GuildMember, action: QueuedAction) => Promise<void>
@@ -128,11 +128,11 @@ export function initActionComponents (creator: SlashCreator): void {
     logger.debug(`Confirming ${upgradeTo} of ${author.id} by moderator ${moderator.id}`)
 
     if (process.env.NODE_ENV === 'production') {
-      if (upgradeTo === 'ban') {
+      if (upgradeTo === ActionUpgrade.BAN) {
         await author.ban({
           reason: 'Spam detected.'
         })
-      } else if (upgradeTo === 'kick') {
+      } else if (upgradeTo === ActionUpgrade.KICK) {
         await author.kick('Spam detected.')
       } else {
         throw new Error(`Unactionable action ${upgradeTo}`)
