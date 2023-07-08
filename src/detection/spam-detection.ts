@@ -89,7 +89,7 @@ export async function executeAntiSpamDetection (
     // Just abort here, we will not be able to action anything anyways
     logger.warn('No spam rules defined, no action can be taken')
     return {
-      action: 'NOTHING',
+      action: DetectionAction.NOTHING,
       averageSimilarity: 0,
       totalPoints: 0,
       comparisons: []
