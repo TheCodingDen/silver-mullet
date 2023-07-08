@@ -5,6 +5,7 @@ import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMes
 import client from '../clients/discord'
 import { QueuedAction } from '../clients/redis'
 import color from '../utils/color'
+import emoji from '../utils/emoji'
 import { errStack } from '../utils/index'
 import { DetectionResult } from './spam-detection'
 import { makeDefaultEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
@@ -89,7 +90,7 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
   function assertValue (value: unknown, thrownMessage: string, ctx: ComponentContext): asserts value {
     if (!value) {
       // Cant use await because assertion functions must be sync
-      ctx.send('Could not confirm the action', {
+      ctx.send(`${emoji.error} Could not confirm the action. Reason: "${thrownMessage}"`, {
         ephemeral: true
       }).catch(err => logger.error(`Failed to send button response\n${errStack(err)}`))
       throw new Error(thrownMessage)
@@ -112,7 +113,7 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
       assertValue(member, `Could not resolve member ${ctx.member.id}`, ctx)
 
       const queuedAction = await fetchQueuedActionByMessageId(ctx.message.id)
-      assertValue(queuedAction, `Could not find queued action for message ${ctx.message.id}`, ctx)
+      assertValue(queuedAction, `Could not find queued action for message ${ctx.message.id}, it may have been expired.`, ctx)
 
       const author = await guild.members.fetch(queuedAction.authorId)
       assertValue(author, `Could not fetch author ${queuedAction.authorId}`, ctx)
@@ -139,7 +140,7 @@ export function initActionComponents (creator: SlashCreator): void {
       }
     } else {
       await replyToOriginalMessage(queuedAction, guild, {
-        content: `Action upgraded to: ${upgradeTo}`
+        content: `Action upgraded to: ${upgradeTo}.`
       })
     }
 
@@ -161,7 +162,7 @@ export function initActionComponents (creator: SlashCreator): void {
 
     await removeQueuedAction(queuedAction)
 
-    await ctx.send('Confirmed the action', {
+    await ctx.send(`${emoji.success} Confirmed the action.`, {
       ephemeral: true
     })
   }))
@@ -194,7 +195,7 @@ export function initActionComponents (creator: SlashCreator): void {
       })]
     }))
 
-    await ctx.send('Cancelled the action', {
+    await ctx.send(`${emoji.success} Cancelled the action.`, {
       ephemeral: true
     })
   }))
