@@ -15,6 +15,7 @@ import path from 'path'
 import prisma from './clients/prisma'
 import redis from './clients/redis'
 import discord from './clients/discord'
+import { initActionComponents } from './detection/actions'
 
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID as string,
@@ -53,6 +54,8 @@ void (async () => {
   logger.info('Connecting to Discord...')
   await discord.login(process.env.DISCORD_BOT_TOKEN)
   logger.info('Connection to Discord established.')
+
+  initActionComponents(creator)
 
   logger.info('Startup process complete.')
 })().catch(logger.error)

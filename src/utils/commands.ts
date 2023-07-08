@@ -1,5 +1,5 @@
 import { PermissionGroup } from '@prisma/client'
-import { CommandContext, SlashCommand } from 'slash-create'
+import { CommandContext, Message, MessageOptions, SlashCommand } from 'slash-create'
 import prisma from '../clients/prisma'
 import emoji from './emoji'
 
@@ -132,15 +132,13 @@ export async function handleCommand (
 
   switch (permissionAssertionResult) {
     case CommandPermissionAssertionResult.MEMBER_UNKNOWN:
-      await ctx.send(
-        `${emoji.error} Sorry, I cannot figure out who you are to authenticate you.`,
-        { ephemeral: true }
-      )
+      await sendFailure('Sorry, I cannot figure out who you are to authenticate you.', ctx, true)
       return
     case CommandPermissionAssertionResult.NOT_ALLOWED:
-      await ctx.send(
-        `${emoji.noEntry} Sorry, you are allowed to use this command. You must belong to the following permission ${allowedGroups.length > 1 ? 'groups' : 'group'}: ${allowedGroups.join(', ')}`,
-        { ephemeral: true }
+      await sendFailure(
+        `Sorry, you are allowed to use this command. You must belong to the following permission ${allowedGroups.length > 1 ? 'groups' : 'group'}: ${allowedGroups.join(', ')}`,
+        ctx,
+        true
       )
       return
   }
@@ -152,21 +150,21 @@ export async function handleCommand (
   if (!result.ok) {
     logger.error(result.err)
 
-    await ctx.send({
-      content: `${emoji.error} ${result.humanReadableErr}`,
-      ephemeral: true
-    })
-
+    await sendFailure(result.humanReadableErr, ctx, true)
     return
   }
 
   await result.node[run](ctx)
 }
 
-export async function sendSuccess (message: string, ctx: CommandContext, ephemeral = false): Promise<void> {
+interface SendableContext {
+  send: (content: string | MessageOptions, options?: MessageOptions | undefined) => Promise<boolean | Message>
+}
+
+export async function sendSuccess (message: string, ctx: SendableContext, ephemeral = false): Promise<void> {
   await ctx.send(`${emoji.success} ${message}`, { ephemeral })
 }
 
-export async function sendFailure (message: string, ctx: CommandContext, ephemeral = true): Promise<void> {
+export async function sendFailure (message: string, ctx: SendableContext, ephemeral = true): Promise<void> {
   await ctx.send(`${emoji.error} ${message}`, { ephemeral })
 }
