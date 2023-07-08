@@ -5,7 +5,7 @@ import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMes
 import client from '../clients/discord'
 import { QueuedAction } from '../clients/redis'
 import color from '../utils/color'
-import emoji from '../utils/emoji'
+import { sendFailure, sendSuccess } from '../utils/commands'
 import { errStack } from '../utils/index'
 import { DetectionResult } from './spam-detection'
 import { makeDefaultEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
@@ -90,9 +90,8 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
   function assertValue (value: unknown, thrownMessage: string, ctx: ComponentContext): asserts value {
     if (!value) {
       // Cant use await because assertion functions must be sync
-      ctx.send(`${emoji.error} Could not confirm the action. Reason: "${thrownMessage}"`, {
-        ephemeral: true
-      }).catch(err => logger.error(`Failed to send button response\n${errStack(err)}`))
+      sendFailure(`Could not confirm the action. Reason: "${thrownMessage}"`, ctx, true)
+        .catch(err => logger.error(`Failed to send button response\n${errStack(err)}`))
       throw new Error(thrownMessage)
     }
   }
@@ -162,9 +161,7 @@ export function initActionComponents (creator: SlashCreator): void {
 
     await removeQueuedAction(queuedAction)
 
-    await ctx.send(`${emoji.success} Confirmed the action.`, {
-      ephemeral: true
-    })
+    await sendSuccess('Confirmed the action.', ctx, true)
   }))
 
   creator.registerGlobalComponent('cancel', makeComponentCallback(async (ctx, guild, moderator, author, queuedAction) => {
@@ -195,9 +192,7 @@ export function initActionComponents (creator: SlashCreator): void {
       })]
     }))
 
-    await ctx.send(`${emoji.success} Cancelled the action.`, {
-      ephemeral: true
-    })
+    await sendSuccess('Cancelled the action.', ctx, true)
   }))
 }
 
