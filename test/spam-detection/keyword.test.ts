@@ -32,7 +32,7 @@ describe('Keyword detection', () => {
           createMany: {
             data: [
               {
-                points: 5,
+                pointThreshold: 5,
                 action: 'BAN',
                 type: 'SPAM'
               }
@@ -67,7 +67,7 @@ describe('Keyword detection', () => {
           createMany: {
             data: [
               {
-                points: 5,
+                pointThreshold: 5,
                 action: 'BAN',
                 type: 'SPAM'
               }

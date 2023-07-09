@@ -32,7 +32,7 @@ describe('Quantity spam', () => {
           createMany: {
             data: [
               {
-                points: 5,
+                pointThreshold: 5,
                 action: 'BAN',
                 type: 'SPAM'
               }
@@ -53,7 +53,7 @@ describe('Quantity spam', () => {
           createMany: {
             data: [
               {
-                points: 5,
+                pointThreshold: 5,
                 action: 'BAN',
                 type: 'SPAM'
               }

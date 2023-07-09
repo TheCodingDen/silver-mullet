@@ -117,6 +117,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
     },
   ],
   "totalPoints": 5,
+  "type": "SPAM",
 }
 `;
 
@@ -237,6 +238,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
     },
   ],
   "totalPoints": 5,
+  "type": "SPAM",
 }
 `;
 
@@ -357,6 +359,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
     },
   ],
   "totalPoints": 5,
+  "type": "SPAM",
 }
 `;
 
@@ -366,5 +369,6 @@ exports[`Quantity spam does not detect a single message as spam 1`] = `
   "averageSimilarity": 0,
   "comparisons": [],
   "totalPoints": 0,
+  "type": "SPAM",
 }
 `;

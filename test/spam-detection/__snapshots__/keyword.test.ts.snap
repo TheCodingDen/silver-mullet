@@ -35,6 +35,7 @@ exports[`Keyword detection detects a single heavily weighted keyword as spam 1`]
     },
   ],
   "totalPoints": 5,
+  "type": "SPAM",
 }
 `;
 
@@ -185,5 +186,6 @@ exports[`Keyword detection detects several lightly weighted keywords as spam 1`]
     },
   ],
   "totalPoints": 5,
+  "type": "SPAM",
 }
 `;
