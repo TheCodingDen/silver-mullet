@@ -1,4 +1,4 @@
-import { CrossChannelAntiSpamSettings } from '@prisma/client'
+import { AntiSpamRule, CrossChannelAntiSpamSettings } from '@prisma/client'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
@@ -9,6 +9,11 @@ export enum DetectionAction {
   QUEUE_BAN = 'QUEUE_BAN',
   QUEUE_KICK = 'QUEUE_KICK',
   NOTHING = 'NOTHING',
+}
+
+export enum ResultType {
+  FILTER = 'FILTER',
+  SPAM = 'SPAM'
 }
 
 export type MatchWeights = Record<string, number>
@@ -32,7 +37,8 @@ export interface SimilarityMatchResult {
  * The result of a spam cache search for a users messages, advises
  * what action to take based on the the comparisons done
  */
-export interface DetectionResult {
+export interface SpamDetectionResult {
+  type: ResultType.SPAM
   action: DetectionAction
   averageSimilarity: number
   totalPoints: number
@@ -66,7 +72,7 @@ export interface Comparison {
 export async function executeAntiSpamDetection (
   postedContent: CachedMessage,
   cachedMessages: CachedMessage[]
-): Promise<DetectionResult> {
+): Promise<SpamDetectionResult> {
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     orderBy: {
       version: 'desc'
@@ -83,12 +89,13 @@ export async function executeAntiSpamDetection (
 
   const { pointOverrides, rules, maxSizeDiffPercentage, minMessageLength } = settings
 
-  const spamRules = rules.filter(r => r.type === 'SPAM')
+  const spamRules = rules.filter((r): r is AntiSpamRule & { pointThreshold: number } => r.type === 'SPAM')
 
   if (!spamRules.length) {
     // Just abort here, we will not be able to action anything anyways
     logger.warn('No spam rules defined, no action can be taken')
     return {
+      type: ResultType.SPAM,
       action: DetectionAction.NOTHING,
       averageSimilarity: 0,
       totalPoints: 0,
@@ -98,6 +105,7 @@ export async function executeAntiSpamDetection (
 
   if (postedContent.content.length < minMessageLength) {
     return {
+      type: ResultType.SPAM,
       action: DetectionAction.NOTHING,
       averageSimilarity: 0,
       totalPoints: 0,
@@ -153,10 +161,11 @@ export async function executeAntiSpamDetection (
     )
 
   const points = pointResults.reduce((acc, val) => acc + val, 0)
-  const actions = spamRules.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
+  const actions = spamRules.filter(a => points >= a.pointThreshold).sort((a, b) => b.pointThreshold - a.pointThreshold)
   const chosenAction = DetectionAction[actions[0]?.action] ?? DetectionAction.NOTHING
 
   return {
+    type: ResultType.SPAM,
     action: chosenAction,
     averageSimilarity: computeAverageSimilarity(comparisons),
     totalPoints: points,

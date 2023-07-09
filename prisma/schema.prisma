@@ -55,6 +55,7 @@ enum AntiSpamAction {
   KICK
   QUEUE_BAN
   QUEUE_KICK
+  NOTHING
 }
 
 enum AntiSpamType {
@@ -65,17 +66,19 @@ enum AntiSpamType {
 model AntiSpamRule {
   id String @id @default(cuid())
 
-  points      Int
-  description String?
-  action      AntiSpamAction
-  type        AntiSpamType
+  pointThreshold Int?
+  triggeringPhrase String?
+  description      String?
+
+  action           AntiSpamAction
+  type             AntiSpamType
 
   settings        CrossChannelAntiSpamSettings? @relation("rules", fields: [settingsVersion], references: [version], onDelete: Cascade)
   settingsVersion Int?
 
   parentId String?
   parent   AntiSpamRule?  @relation("parentId", fields: [parentId], references: [id])
-  children  AntiSpamRule[] @relation("parentId")
+  children AntiSpamRule[] @relation("parentId")
 }
 
 model PointOverride {

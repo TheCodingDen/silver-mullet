@@ -142,7 +142,7 @@ export default class CCASConfigCommand extends SlashCommand {
       }
       case 'mapping': {
         const mappings = await prisma.antiSpamRule.findMany({})
-        const validOptions = mappings.map(m => `${m.points} - ${m.action}`)
+        const validOptions = mappings.map(m => `${m.pointThreshold} - ${m.action}`)
         const input = options?.actions?.remove?.mapping
 
         const likely = didYouMean(
@@ -152,8 +152,8 @@ export default class CCASConfigCommand extends SlashCommand {
         )
 
         return mappings
-          .filter(option => humanLikely(input, likely, `${option.points} - ${option.action}`))
-          .map(option => ({ name: `${option.points} - ${option.action}`, value: option.id }))
+          .filter(option => humanLikely(input, likely, `${option.pointThreshold} - ${option.action}`))
+          .map(option => ({ name: `${option.pointThreshold} - ${option.action}`, value: option.id }))
           .sort(alphabetical)
       }
       default:

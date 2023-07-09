@@ -7,10 +7,11 @@ import { ActionUpgrade, QueuedAction } from '../clients/redis'
 import color from '../utils/color'
 import { sendFailure, sendSuccess } from '../utils/commands'
 import { errStack } from '../utils/index'
-import { DetectionResult } from './spam-detection'
-import { makeDefaultEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
+import { FilterDetectionResult } from './filter-detection'
+import { ResultType, SpamDetectionResult } from './spam-detection'
+import { makeSpamEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, makeFilterEmbed } from './utils'
 
-export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
+export type ActionFunction = (member: GuildMember, message: Message<true>, result: SpamDetectionResult | FilterDetectionResult) => Promise<unknown>
 
 const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: async (member, message, result) => {
@@ -25,11 +26,12 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     }
 
     const queuedAction = await fetchQueuedActionByAuthorId(member.id)
+    const embed = result.type === ResultType.SPAM ? makeSpamEmbed(message, result) : makeFilterEmbed(message, result)
     if (queuedAction) {
       logger.debug(`Updating embed for author ${member.id} to ban`)
       await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
-          ...makeDefaultEmbed(message, result),
+          ...embed,
           title: 'Automatically upgraded to ban, spam detected',
           color: color.red
         }],
@@ -44,7 +46,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     } else {
       const logChannel = await getLogChannel(message.guild)
       await logChannel.send({
-        embeds: [makeDefaultEmbed(message, result)]
+        embeds: [embed]
       })
     }
   },
@@ -58,11 +60,12 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     }
 
     const queuedAction = await fetchQueuedActionByMessageId(member.id)
+    const embed = result.type === ResultType.SPAM ? makeSpamEmbed(message, result) : makeFilterEmbed(message, result)
     if (queuedAction) {
       logger.debug(`Updating embed for author ${member.id} to kick`)
       await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
-          ...makeDefaultEmbed(message, result),
+          ...embed,
           title: 'Automatically upgraded to kick, spam detected',
           color: color.red
         }],
@@ -77,12 +80,13 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     } else {
       const logChannel = await getLogChannel(message.guild)
       await logChannel.send({
-        embeds: [makeDefaultEmbed(message, result)]
+        embeds: [embed]
       })
     }
   },
   QUEUE_BAN: makeQueueCallback(ActionUpgrade.BAN),
-  QUEUE_KICK: makeQueueCallback(ActionUpgrade.KICK)
+  QUEUE_KICK: makeQueueCallback(ActionUpgrade.KICK),
+  NOTHING: async () => await Promise.resolve()
 }
 
 type WrappedComponentCallback = (ctx: ComponentContext, guild: Guild, moderator: GuildMember, author: GuildMember, action: QueuedAction) => Promise<void>
