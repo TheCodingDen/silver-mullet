@@ -13,11 +13,16 @@ import { makeSpamEmbed, getChannel, getLogChannel, getQueueChannel, makeComponen
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: SpamDetectionResult | FilterDetectionResult) => Promise<unknown>
 
+const Reasons: Record<ResultType, string> = {
+  FILTER: 'Filter triggered',
+  SPAM: 'Spam detected'
+}
+
 const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
       await member.ban({
-        reason: 'Spam detected.'
+        reason: Reasons[result.type]
       })
     } else {
       await message.reply({
@@ -32,7 +37,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
           ...embed,
-          title: 'Automatically upgraded to ban, spam detected',
+          title: `Automatically upgraded to ban, ${Reasons[result.type].toLowerCase()}`,
           color: color.red
         }],
         components: [makeComponents({
@@ -52,7 +57,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
   },
   KICK: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await member.kick('Spam detected.')
+      await member.kick(Reasons[result.type])
     } else {
       await message.reply({
         content: `Action taken: ${result.action}`
@@ -66,7 +71,7 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       await updateQueueMessage(queuedAction, message.guild, () => ({
         embeds: [{
           ...embed,
-          title: 'Automatically upgraded to kick, spam detected',
+          title: `Automatically upgraded to kick, ${Reasons[result.type].toLowerCase()}`,
           color: color.red
         }],
         components: [makeComponents({
