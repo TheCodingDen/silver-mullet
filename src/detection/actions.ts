@@ -32,9 +32,13 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       handleRetryResult(banResult, `When banning user ${member.user.username}`)
       handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
     } else {
-      await messageUser(member.user, {
+      const result = await retryCallback(async () => await messageUser(member.user, {
         content: `You would have been banned from ${member.guild.name} due to spam.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake banning ${member.user.username}`)
     }
 
     const queuedAction = await fetchQueuedActionByAuthorId(member.id)
@@ -77,9 +81,13 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
       handleRetryResult(kickResult, `When kicking user ${member.user.username}`)
       handleRetryResult(messageResult, `When messaging kicked user ${member.user.username}`)
     } else {
-      await messageUser(member.user, {
+      const result = await retryCallback(async () => await messageUser(member.user, {
         content: `You would have been kicked from ${member.guild.name} due to spam.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake kicking ${member.user.username}`)
     }
 
     const queuedAction = await fetchQueuedActionByMessageId(member.id)
@@ -187,9 +195,13 @@ export function initActionComponents (creator: SlashCreator): void {
         throw new Error(`Unactionable action ${upgradeTo}`)
       }
     } else {
-      await messageUser(author.user, {
+      const result = await retryCallback(async () => await messageUser(author.user, {
         content: `Moderator confirmed ${upgradeTo} from ${author.guild.name} due to spam.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake kicking ${author.user.username}`)
     }
 
     await updateQueueMessage(queuedAction, guild, queueMessage => ({
@@ -220,9 +232,13 @@ export function initActionComponents (creator: SlashCreator): void {
     logger.debug(`Cancelling ${upgradeTo} of ${author.id} by moderator ${moderator.id}`)
 
     if (process.env.NODE_ENV !== 'production') {
-      await messageUser(author.user, {
+      const result = await retryCallback(async () => await messageUser(author.user, {
         content: `Moderator canceled ${upgradeTo} from ${author.guild.name}.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake kicking ${author.user.username}`)
     }
 
     await updateQueueMessage(queuedAction, guild, queueMessage => ({
