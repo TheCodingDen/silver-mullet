@@ -1,5 +1,5 @@
 import { AntiSpamAction } from '@prisma/client'
-import { Guild, GuildMember, Message, MessageEditOptions, MessageReplyOptions } from 'discord.js'
+import { Guild, GuildMember, Message, MessageEditOptions } from 'discord.js'
 import { ComponentContext, SlashCreator } from 'slash-create'
 import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMessageId, removeQueuedAction } from '../cache/op'
 import client from '../clients/discord'
@@ -8,19 +8,24 @@ import color from '../utils/color'
 import { sendFailure, sendSuccess } from '../utils/commands'
 import { errStack } from '../utils/index'
 import { DetectionResult } from './spam-detection'
-import { makeDefaultEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
+import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser } from './utils'
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
 const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await member.ban({
-        reason: 'Spam detected.'
-      })
+      await Promise.all([
+        member.ban({
+          reason: 'Spam detected.'
+        }),
+        messageUser(member.user, {
+          content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+        })
+      ])
     } else {
-      await message.reply({
-        content: `Action taken: ${result.action}`
+      await messageUser(member.user, {
+        content: `You would have been banned from ${member.guild.name} due to spam.`
       })
     }
 
@@ -50,10 +55,15 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
   },
   KICK: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await member.kick('Spam detected.')
+      await Promise.all([
+        member.kick('Spam detected.'),
+        messageUser(member.user, {
+          content: `You have been kicked from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+        })
+      ])
     } else {
-      await message.reply({
-        content: `Action taken: ${result.action}`
+      await messageUser(member.user, {
+        content: `You would have been kicked from ${member.guild.name} due to spam.`
       })
     }
 
@@ -129,17 +139,29 @@ export function initActionComponents (creator: SlashCreator): void {
 
     if (process.env.NODE_ENV === 'production') {
       if (upgradeTo === ActionUpgrade.BAN) {
-        await author.ban({
-          reason: 'Spam detected.'
-        })
+        await Promise.all([
+          author.ban({
+            reason: 'Spam detected.'
+          }),
+          messageUser(author.user, {
+            content: `You have been banned from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          })
+        ])
       } else if (upgradeTo === ActionUpgrade.KICK) {
         await author.kick('Spam detected.')
+
+        await Promise.all([
+          author.kick('Spam detected.'),
+          messageUser(author.user, {
+            content: `You have been kicked from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          })
+        ])
       } else {
         throw new Error(`Unactionable action ${upgradeTo}`)
       }
     } else {
-      await replyToOriginalMessage(queuedAction, guild, {
-        content: `Action upgraded to: ${upgradeTo}.`
+      await messageUser(author.user, {
+        content: `Moderator confirmed ${upgradeTo} from ${author.guild.name} due to spam.`
       })
     }
 
@@ -171,8 +193,8 @@ export function initActionComponents (creator: SlashCreator): void {
     logger.debug(`Cancelling ${upgradeTo} of ${author.id} by moderator ${moderator.id}`)
 
     if (process.env.NODE_ENV !== 'production') {
-      await replyToOriginalMessage(queuedAction, guild, {
-        content: `Action ${upgradeTo} cancelled`
+      await messageUser(author.user, {
+        content: `Moderator canceled ${upgradeTo} from ${author.guild.name}.`
       })
     }
 
@@ -194,17 +216,6 @@ export function initActionComponents (creator: SlashCreator): void {
 
     await sendSuccess('Cancelled the action.', ctx, true)
   }))
-}
-
-async function replyToOriginalMessage (queuedAction: QueuedAction, guild: Guild, message: MessageReplyOptions): Promise<void> {
-  const { originalChannelId, originalMessageId, upgradeTo } = queuedAction
-  try {
-    const originalChannel = await getChannel(guild, 'orignal', originalChannelId)
-    const originalMessage = await originalChannel.messages.fetch(originalMessageId)
-    await originalMessage.reply(message)
-  } catch (err) {
-    logger.warn(`Failed to fetch/reply to original action with upgradeTo = ${upgradeTo}\n${errStack(err)}`)
-  }
 }
 
 async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, newMessage: (queueMessage: Message) => MessageEditOptions): Promise<void> {
