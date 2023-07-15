@@ -7,22 +7,30 @@ import { ActionUpgrade, QueuedAction } from '../clients/redis'
 import color from '../utils/color'
 import { sendFailure, sendSuccess } from '../utils/commands'
 import { errStack } from '../utils/index'
+import { retryCallback } from '../utils/retry'
 import { DetectionResult } from './spam-detection'
-import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser } from './utils'
+import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser, handleRetryResult } from './utils'
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
 const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await Promise.all([
-        member.ban({
+      const [banResult, messageResult] = await Promise.all([
+        retryCallback(async () => await member.ban({
           reason: 'Spam detected.'
+        }), {
+          attempts: 3
         }),
-        messageUser(member.user, {
+        retryCallback(async () => await messageUser(member.user, {
           content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+        }), {
+          attempts: 3
         })
       ])
+
+      handleRetryResult(banResult, `When banning user ${member.user.username}`)
+      handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
     } else {
       await messageUser(member.user, {
         content: `You would have been banned from ${member.guild.name} due to spam.`
@@ -55,12 +63,19 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
   },
   KICK: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await Promise.all([
-        member.kick('Spam detected.'),
-        messageUser(member.user, {
+      const [kickResult, messageResult] = await Promise.all([
+        retryCallback(async () => await member.kick('Spam detected.'), {
+          attempts: 3
+        }),
+        retryCallback(async () => await messageUser(member.user, {
           content: `You have been kicked from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+        }), {
+          attempts: 3
         })
       ])
+
+      handleRetryResult(kickResult, `When kicking user ${member.user.username}`)
+      handleRetryResult(messageResult, `When messaging kicked user ${member.user.username}`)
     } else {
       await messageUser(member.user, {
         content: `You would have been kicked from ${member.guild.name} due to spam.`
@@ -139,23 +154,35 @@ export function initActionComponents (creator: SlashCreator): void {
 
     if (process.env.NODE_ENV === 'production') {
       if (upgradeTo === ActionUpgrade.BAN) {
-        await Promise.all([
-          author.ban({
+        const [banResult, messageResult] = await Promise.all([
+          retryCallback(async () => await author.ban({
             reason: 'Spam detected.'
+          }), {
+            attempts: 3
           }),
-          messageUser(author.user, {
+          retryCallback(async () => await messageUser(author.user, {
             content: `You have been banned from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          }), {
+            attempts: 3
           })
         ])
-      } else if (upgradeTo === ActionUpgrade.KICK) {
-        await author.kick('Spam detected.')
 
-        await Promise.all([
-          author.kick('Spam detected.'),
-          messageUser(author.user, {
+        handleRetryResult(banResult, `When banning user ${author.user.username}`)
+        handleRetryResult(messageResult, `When messaging banned user ${author.user.username}`)
+      } else if (upgradeTo === ActionUpgrade.KICK) {
+        const [kickResult, messageResult] = await Promise.all([
+          retryCallback(async () => await author.kick('Spam detected.'), {
+            attempts: 3
+          }),
+          retryCallback(async () => await messageUser(author.user, {
             content: `You have been kicked from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          }), {
+            attempts: 3
           })
         ])
+
+        handleRetryResult(kickResult, `When kicking user ${author.user.username}`)
+        handleRetryResult(messageResult, `When messaging kicked user ${author.user.username}`)
       } else {
         throw new Error(`Unactionable action ${upgradeTo}`)
       }
