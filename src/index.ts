@@ -16,6 +16,7 @@ import prisma from './clients/prisma'
 import redis from './clients/redis'
 import discord from './clients/discord'
 import { initActionComponents } from './detection/actions'
+import { errStack } from './utils'
 
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID as string,
@@ -58,4 +59,4 @@ void (async () => {
   initActionComponents(creator)
 
   logger.info('Startup process complete.')
-})().catch(logger.error)
+})().catch(err => logger.error(`Startup failed: ${errStack(err)}`))

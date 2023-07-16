@@ -152,7 +152,7 @@ export default class IgnoreCommand extends SlashCommand {
           break
         }
       } catch (err) {
-        logger.debug(`Fetcher error\n${err}`)
+        logger.debug(`Fetcher failed\n${err}`)
       }
     }
 
