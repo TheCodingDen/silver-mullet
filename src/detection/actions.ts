@@ -1,5 +1,5 @@
 import { AntiSpamAction } from '@prisma/client'
-import { Guild, GuildMember, Message, MessageEditOptions } from 'discord.js'
+import { DiscordAPIError, Guild, GuildMember, Message, MessageEditOptions } from 'discord.js'
 import { ComponentContext, SlashCreator } from 'slash-create'
 import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMessageId, removeQueuedAction } from '../cache/op'
 import client from '../clients/discord'
@@ -11,6 +11,8 @@ import { retryCallback } from '../utils/retry'
 import { DetectionResult } from './spam-detection'
 import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser, handleRetryResult } from './utils'
 
+const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
+
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
 const actions: Record<AntiSpamAction, ActionFunction> = {
@@ -20,12 +22,14 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
         retryCallback(async () => await member.ban({
           reason: 'Spam detected.'
         }), {
-          attempts: 3
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
         }),
         retryCallback(async () => await messageUser(member.user, {
           content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
         }), {
-          attempts: 3
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
         })
       ])
 
@@ -69,12 +73,14 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
     if (process.env.NODE_ENV === 'production') {
       const [kickResult, messageResult] = await Promise.all([
         retryCallback(async () => await member.kick('Spam detected.'), {
-          attempts: 3
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
         }),
         retryCallback(async () => await messageUser(member.user, {
           content: `You have been kicked from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
         }), {
-          attempts: 3
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
         })
       ])
 
@@ -166,12 +172,14 @@ export function initActionComponents (creator: SlashCreator): void {
           retryCallback(async () => await author.ban({
             reason: 'Spam detected.'
           }), {
-            attempts: 3
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
           }),
           retryCallback(async () => await messageUser(author.user, {
             content: `You have been banned from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
           }), {
-            attempts: 3
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
           })
         ])
 
@@ -180,12 +188,14 @@ export function initActionComponents (creator: SlashCreator): void {
       } else if (upgradeTo === ActionUpgrade.KICK) {
         const [kickResult, messageResult] = await Promise.all([
           retryCallback(async () => await author.kick('Spam detected.'), {
-            attempts: 3
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
           }),
           retryCallback(async () => await messageUser(author.user, {
             content: `You have been kicked from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
           }), {
-            attempts: 3
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
           })
         ])
 
