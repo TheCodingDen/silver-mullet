@@ -1,5 +1,5 @@
 import { AntiSpamAction } from '@prisma/client'
-import { Guild, GuildMember, Message, MessageEditOptions, MessageReplyOptions } from 'discord.js'
+import { DiscordAPIError, Guild, GuildMember, Message, MessageEditOptions } from 'discord.js'
 import { ComponentContext, SlashCreator } from 'slash-create'
 import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMessageId, removeQueuedAction } from '../cache/op'
 import client from '../clients/discord'
@@ -7,21 +7,42 @@ import { ActionUpgrade, QueuedAction } from '../clients/redis'
 import color from '../utils/color'
 import { sendFailure, sendSuccess } from '../utils/commands'
 import { errStack } from '../utils/index'
+import { retryCallback } from '../utils/retry'
 import { DetectionResult } from './spam-detection'
-import { makeDefaultEmbed, getChannel, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback } from './utils'
+import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser, handleRetryResult } from './utils'
+
+const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
 const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await member.ban({
-        reason: 'Spam detected.'
-      })
+      const [banResult, messageResult] = await Promise.all([
+        retryCallback(async () => await member.ban({
+          reason: 'Spam detected.'
+        }), {
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
+        }),
+        retryCallback(async () => await messageUser(member.user, {
+          content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+        }), {
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
+        })
+      ])
+
+      handleRetryResult(banResult, `When banning user ${member.user.username}`)
+      handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
     } else {
-      await message.reply({
-        content: `Action taken: ${result.action}`
+      const result = await retryCallback(async () => await messageUser(member.user, {
+        content: `You would have been banned from ${member.guild.name} due to spam.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake banning ${member.user.username}`)
     }
 
     const queuedAction = await fetchQueuedActionByAuthorId(member.id)
@@ -50,11 +71,29 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
   },
   KICK: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
-      await member.kick('Spam detected.')
+      const [kickResult, messageResult] = await Promise.all([
+        retryCallback(async () => await member.kick('Spam detected.'), {
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
+        }),
+        retryCallback(async () => await messageUser(member.user, {
+          content: `You have been kicked from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+        }), {
+          attempts: 3,
+          errorPredicate: ignoreFailedDeliver
+        })
+      ])
+
+      handleRetryResult(kickResult, `When kicking user ${member.user.username}`)
+      handleRetryResult(messageResult, `When messaging kicked user ${member.user.username}`)
     } else {
-      await message.reply({
-        content: `Action taken: ${result.action}`
+      const result = await retryCallback(async () => await messageUser(member.user, {
+        content: `You would have been kicked from ${member.guild.name} due to spam.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake kicking ${member.user.username}`)
     }
 
     const queuedAction = await fetchQueuedActionByMessageId(member.id)
@@ -129,18 +168,50 @@ export function initActionComponents (creator: SlashCreator): void {
 
     if (process.env.NODE_ENV === 'production') {
       if (upgradeTo === ActionUpgrade.BAN) {
-        await author.ban({
-          reason: 'Spam detected.'
-        })
+        const [banResult, messageResult] = await Promise.all([
+          retryCallback(async () => await author.ban({
+            reason: 'Spam detected.'
+          }), {
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
+          }),
+          retryCallback(async () => await messageUser(author.user, {
+            content: `You have been banned from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          }), {
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
+          })
+        ])
+
+        handleRetryResult(banResult, `When banning user ${author.user.username}`)
+        handleRetryResult(messageResult, `When messaging banned user ${author.user.username}`)
       } else if (upgradeTo === ActionUpgrade.KICK) {
-        await author.kick('Spam detected.')
+        const [kickResult, messageResult] = await Promise.all([
+          retryCallback(async () => await author.kick('Spam detected.'), {
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
+          }),
+          retryCallback(async () => await messageUser(author.user, {
+            content: `You have been kicked from ${author.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          }), {
+            attempts: 3,
+            errorPredicate: ignoreFailedDeliver
+          })
+        ])
+
+        handleRetryResult(kickResult, `When kicking user ${author.user.username}`)
+        handleRetryResult(messageResult, `When messaging kicked user ${author.user.username}`)
       } else {
         throw new Error(`Unactionable action ${upgradeTo}`)
       }
     } else {
-      await replyToOriginalMessage(queuedAction, guild, {
-        content: `Action upgraded to: ${upgradeTo}.`
+      const result = await retryCallback(async () => await messageUser(author.user, {
+        content: `Moderator confirmed ${upgradeTo} from ${author.guild.name} due to spam.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake kicking ${author.user.username}`)
     }
 
     await updateQueueMessage(queuedAction, guild, queueMessage => ({
@@ -171,9 +242,13 @@ export function initActionComponents (creator: SlashCreator): void {
     logger.debug(`Cancelling ${upgradeTo} of ${author.id} by moderator ${moderator.id}`)
 
     if (process.env.NODE_ENV !== 'production') {
-      await replyToOriginalMessage(queuedAction, guild, {
-        content: `Action ${upgradeTo} cancelled`
+      const result = await retryCallback(async () => await messageUser(author.user, {
+        content: `Moderator canceled ${upgradeTo} from ${author.guild.name}.`
+      }), {
+        attempts: 1
       })
+
+      handleRetryResult(result, `When fake kicking ${author.user.username}`)
     }
 
     await updateQueueMessage(queuedAction, guild, queueMessage => ({
@@ -194,17 +269,6 @@ export function initActionComponents (creator: SlashCreator): void {
 
     await sendSuccess('Cancelled the action.', ctx, true)
   }))
-}
-
-async function replyToOriginalMessage (queuedAction: QueuedAction, guild: Guild, message: MessageReplyOptions): Promise<void> {
-  const { originalChannelId, originalMessageId, upgradeTo } = queuedAction
-  try {
-    const originalChannel = await getChannel(guild, 'orignal', originalChannelId)
-    const originalMessage = await originalChannel.messages.fetch(originalMessageId)
-    await originalMessage.reply(message)
-  } catch (err) {
-    logger.warn(`Failed to fetch/reply to original action with upgradeTo = ${upgradeTo}\n${errStack(err)}`)
-  }
 }
 
 async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, newMessage: (queueMessage: Message) => MessageEditOptions): Promise<void> {

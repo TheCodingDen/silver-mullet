@@ -1,13 +1,15 @@
-import { ActionRowBuilder, APIEmbed, ButtonBuilder, ButtonStyle, Guild, Message, TextBasedChannel } from 'discord.js'
+import { ActionRowBuilder, APIEmbed, ButtonBuilder, ButtonStyle, Guild, Message, MessageCreateOptions, TextBasedChannel, User } from 'discord.js'
 import _ from 'lodash'
 import { addQueuedAction, fetchQueuedActionByAuthorId } from '../cache/op'
 import { ActionUpgrade } from '../clients/redis'
+import { errStack } from '../utils'
 import color from '../utils/color'
 import { embedBase, messageLink } from '../utils/discordUtils'
+import { RetryResult } from '../utils/retry'
 import { ActionFunction } from './actions'
 import { Comparison, DetectionResult } from './spam-detection'
 
-export async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
+async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
     throw new Error(`${name} channel ID was not set`)
   }
@@ -176,4 +178,17 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
           }
         `
   }
+}
+
+export async function messageUser (user: User, message: MessageCreateOptions): Promise<Message> {
+  const channel = await user.createDM()
+  return await channel.send(message)
+}
+
+export function handleRetryResult (result: RetryResult<unknown>, context: string): void {
+  if (result.success) {
+    return
+  }
+
+  logger.error(`Failed to execute promise through retry (context: ${context}), encountered ${result.errors.length} error(s):\n${result.errors.map(errStack).join('\n\n')}`)
 }
