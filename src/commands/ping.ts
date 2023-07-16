@@ -7,7 +7,7 @@ export default class PingCommand extends SlashCommand {
     super(creator, {
       name: 'ping',
       description: 'Check whether the bot is responding.',
-      guildIDs: getAssignedGuilds({ includeMain: true })
+      guildIDs: getAssignedGuilds({ includeMain: true, includeStaff: false })
     })
   }
 

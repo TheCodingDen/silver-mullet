@@ -21,7 +21,7 @@ export default class CCASConfigCommand extends SlashCommand {
     super(creator, {
       name: 'ccas-config',
       description: 'Edit Cross-Channel Anti-Spam (CCAS) system settings. Infra admins only.',
-      guildIDs: getAssignedGuilds({ includeMain: true }),
+      guildIDs: getAssignedGuilds({ includeMain: true, includeStaff: false }),
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,

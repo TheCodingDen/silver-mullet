@@ -19,7 +19,7 @@ export default class IgnoreCommand extends SlashCommand {
     super(creator, {
       name: 'ignore',
       description: 'Manage channels, categories and roles ignored by the bot. Infra admins only.',
-      guildIDs: getAssignedGuilds({ includeMain: true }),
+      guildIDs: getAssignedGuilds({ includeMain: true, includeStaff: false }),
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,
