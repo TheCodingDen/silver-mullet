@@ -67,7 +67,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
-  const authorMessagesResult = retryCallback(() => await fetchMessagesByAuthor(message.author.id), {
+  const authorMessagesResult = await retryCallback(async () => await fetchMessagesByAuthor(message.author.id), {
     attempts: 3
   })
 
