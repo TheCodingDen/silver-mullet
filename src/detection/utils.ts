@@ -186,7 +186,8 @@ export async function messageUser (user: User, message: MessageCreateOptions): P
 }
 
 export function handleRetryResult (result: RetryResult<unknown>, context: string): void {
-  if (result.success) {
+   // Abort if there is no captured errors (filtered out), but we still were not successful
+   if (result.success || !result.errors.length) {
     return
   }
 
