@@ -84,14 +84,16 @@ export async function onGuildMessage (message: Message): Promise<void> {
   const antiSpamResult = await executeAntiSpamDetection(messageToCache, authorMessages)
   const { action, averageSimilarity, comparisons } = antiSpamResult
 
+  const content = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : message.content.substring(0, 10)
   logger.debug(
-    `action: ${action}, average similarity: ${averageSimilarity}, original-content: ${message.content.substring(0, 10)}`
+    `action: ${action}, average similarity: ${averageSimilarity}, original-content: ${content}`
   )
   for (const comparison of comparisons) {
+    const comparisonContent = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : comparison.comparedContent.content.substring(0, 10)
     logger.debug(
       `similarity: ${comparison.similarityToPostedContent}, matches: ${
         JSON.stringify(comparison.pointsFromMatches ?? {}, undefined, 2)
-      }, content-preview: ${comparison.comparedContent.content.substring(0, 10)}`
+      }, content-preview: ${comparisonContent}`
     )
   }
 
