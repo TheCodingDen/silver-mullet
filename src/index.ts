@@ -59,4 +59,9 @@ void (async () => {
   initActionComponents(creator)
 
   logger.info('Startup process complete.')
+
+  // Catch any unhandled rejections (mainly from d.js) so that they dont crash us & we get nice logs
+  process.on('unhandledRejection', (err) => {
+    logger.error(`Encountered unexpected exception:\n${errStack(err)}`)
+  })
 })().catch(err => logger.error(`Startup failed: ${errStack(err)}`))
