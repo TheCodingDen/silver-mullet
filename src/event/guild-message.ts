@@ -89,7 +89,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     `action: ${action}, average similarity: ${averageSimilarity}, original-content: ${content}`
   )
   for (const comparison of comparisons) {
-    const comparisonContent = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : comparison.comparedContent.content.substring(0, 10)
+    const comparisonContent = process.env.NODE_ENV === 'production' ? '<omitted>' : comparison.comparedContent.content.substring(0, 10)
     logger.debug(
       `similarity: ${comparison.similarityToPostedContent}, matches: ${
         JSON.stringify(comparison.pointsFromMatches ?? {}, undefined, 2)
