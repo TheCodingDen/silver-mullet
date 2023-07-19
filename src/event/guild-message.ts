@@ -5,6 +5,7 @@ import actions from '../detection/actions'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
 import { errStack } from '../utils/index'
 import Nilsimsa from '../vendor/nilsimsa'
+import { retryCallback } from '../utils/retry'
 
 // Store currently executing actions per user, so that we get order between actions as to avoid collision
 const actionPromises = new Map<string, Promise<unknown>>()
@@ -66,7 +67,17 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
-  const authorMessages = await fetchMessagesByAuthor(message.author.id)
+  const authorMessagesResult = await retryCallback(async () => await fetchMessagesByAuthor(message.author.id), {
+    attempts: 3
+  })
+
+  if (!authorMessagesResult.success) {
+    // FIXME: This should not be required, tracking https://github.com/redis/redis-om-node/issues/195
+    logger.error(`Tried 3 times to fetch author messages, all 3 attempts failed. Error(s):\n${authorMessagesResult.errors.map(errStack).join('\n\n')}`)
+    return
+  }
+
+  const authorMessages = authorMessagesResult.value
   logger.debug(`Got ${authorMessages.length} messages from ${message.author.id}`)
 
   const messageToCache = {
@@ -84,14 +95,16 @@ export async function onGuildMessage (message: Message): Promise<void> {
   const antiSpamResult = await executeAntiSpamDetection(messageToCache, authorMessages)
   const { action, averageSimilarity, comparisons } = antiSpamResult
 
+  const content = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : message.content.substring(0, 10)
   logger.debug(
-    `action: ${action}, average similarity: ${averageSimilarity}, original-content: ${message.content.substring(0, 10)}`
+    `action: ${action}, average similarity: ${averageSimilarity}, original-content: ${content}`
   )
   for (const comparison of comparisons) {
+    const comparisonContent = process.env.NODE_ENV === 'production' ? '<omitted>' : comparison.comparedContent.content.substring(0, 10)
     logger.debug(
       `similarity: ${comparison.similarityToPostedContent}, matches: ${
         JSON.stringify(comparison.pointsFromMatches ?? {}, undefined, 2)
-      }, content-preview: ${comparison.comparedContent.content.substring(0, 10)}`
+      }, content-preview: ${comparisonContent}`
     )
   }
 

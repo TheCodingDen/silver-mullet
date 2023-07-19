@@ -11,7 +11,7 @@ export default class ConfigCommand extends SlashCommand {
     super(creator, {
       name: 'permissions',
       description: 'Edit role => bot permission group mappings. Infra admins only.',
-      guildIDs: getAssignedGuilds({ includeMain: true }),
+      guildIDs: getAssignedGuilds({ includeMain: true, includeStaff: false }),
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,

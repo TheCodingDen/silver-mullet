@@ -16,6 +16,7 @@ import prisma from './clients/prisma'
 import redis from './clients/redis'
 import discord from './clients/discord'
 import { initActionComponents } from './detection/actions'
+import { errStack } from './utils'
 
 const creator = new SlashCreator({
   applicationID: process.env.DISCORD_APP_ID as string,
@@ -58,4 +59,9 @@ void (async () => {
   initActionComponents(creator)
 
   logger.info('Startup process complete.')
-})().catch(err => logger.error(err))
+
+  // Catch any unhandled rejections (mainly from d.js) so that they dont crash us & we get nice logs
+  process.on('unhandledRejection', (err) => {
+    logger.error(`Encountered unexpected exception:\n${errStack(err)}`)
+  })
+})().catch(err => logger.error(`Startup failed: ${errStack(err)}`))

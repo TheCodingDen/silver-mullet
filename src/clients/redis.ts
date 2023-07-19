@@ -9,7 +9,7 @@ redis.on('error', (err) => logger.error(err))
 redis.on('connect', () => logger.info('Redis initiating connection'))
 redis.on('ready', () => {
   logger.info('Redis connected and ready')
-  initRepositories().catch(logger.error)
+  initRepositories().catch(err => logger.error(err))
 })
 redis.on('end', () => logger.info('Redis disconnected'))
 
