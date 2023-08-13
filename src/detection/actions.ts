@@ -162,7 +162,7 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
       })
 
       if (!targetResult.success) {
-        // Target may have beben banned, left, etc
+        // Target may have been banned, left, etc
         await removeQueuedAction(queuedAction)
         await updateQueueMessage(queuedAction, guild, queueMessage => ({
           embeds: [{
