@@ -161,7 +161,11 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
         attempts: 3
       })
 
-      if (!targetResult.success) {
+      let target
+
+      try {
+        target = await guild.members.fetch(queuedAction.authorId)
+      } catch {
         // Target may have been banned, left, etc
         await removeQueuedAction(queuedAction)
         await updateQueueMessage(queuedAction, guild, queueMessage => ({
@@ -182,7 +186,7 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
         return
       }
 
-      await cb(ctx, guild, moderator, targetResult.value, queuedAction)
+      await cb(ctx, guild, moderator, target, queuedAction)
     })().catch(err => logger.error(`Error running component callback:\n${errStack(err)}`))
   }
 }
