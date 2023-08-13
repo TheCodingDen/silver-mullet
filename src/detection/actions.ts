@@ -155,12 +155,6 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
       assertValue(queuedAction, `Could not find queued action for message ${ctx.message.id}, it may have been expired.`, ctx)
 
       // Try to fetch multiple times, in case the API decided to die
-      const targetResult = await retryCallback(async () => {
-        return await guild.members.fetch(queuedAction.authorId)
-      }, {
-        attempts: 3
-      })
-
       let target
 
       try {
