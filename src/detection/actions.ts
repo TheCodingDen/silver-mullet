@@ -175,7 +175,8 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
         }))
 
         await ctx.send({
-          content: `Could not resolve member with ID ${queuedAction.authorId}, assuming already actioned. Cancelling this action.`
+          content: `Could not resolve member with ID ${queuedAction.authorId}, assuming already actioned. Cancelling this action.`,
+          ephemeral: true
         })
         return
       }
