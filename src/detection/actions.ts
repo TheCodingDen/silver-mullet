@@ -146,17 +146,42 @@ function makeComponentCallback (cb: WrappedComponentCallback): (ctx: ComponentCo
       const guild = await client.guilds.fetch(ctx.guildID)
 
       assertValue(guild, `Could not resolve guild ${ctx.guildID}`, ctx)
-      const member = await guild.members.fetch(ctx.member.id)
+      const moderator = await guild.members.fetch(ctx.member.id)
 
-      assertValue(member, `Could not resolve member ${ctx.member.id}`, ctx)
+      // Okay to assert, needs to exist (and should, the moderator triggered this event)
+      assertValue(moderator, `Could not resolve moderator ${ctx.member.id}`, ctx)
 
       const queuedAction = await fetchQueuedActionByMessageId(ctx.message.id)
       assertValue(queuedAction, `Could not find queued action for message ${ctx.message.id}, it may have been expired.`, ctx)
 
-      const author = await guild.members.fetch(queuedAction.authorId)
-      assertValue(author, `Could not fetch author ${queuedAction.authorId}`, ctx)
+      // Try to fetch multiple times, in case the API decided to die
+      let target
 
-      await cb(ctx, guild, member, author, queuedAction)
+      try {
+        target = await guild.members.fetch(queuedAction.authorId)
+      } catch {
+        // Target may have been banned, left, etc
+        await removeQueuedAction(queuedAction)
+        await updateQueueMessage(queuedAction, guild, queueMessage => ({
+          embeds: [{
+            ...queueMessage.embeds[0].data,
+            title: 'User could not be found, cancelled automatically.',
+            color: color.grey
+          }],
+          components: [makeComponents({
+            disabled: true,
+            confirmAction: queuedAction.upgradeTo
+          })]
+        }))
+
+        await ctx.send({
+          content: `Could not resolve member with ID ${queuedAction.authorId}, assuming already actioned. Cancelling this action.`,
+          ephemeral: true
+        })
+        return
+      }
+
+      await cb(ctx, guild, moderator, target, queuedAction)
     })().catch(err => logger.error(`Error running component callback:\n${errStack(err)}`))
   }
 }
