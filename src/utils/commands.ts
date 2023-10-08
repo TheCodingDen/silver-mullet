@@ -170,3 +170,7 @@ export async function sendSuccess (message: string, ctx: SendableContext, epheme
 export async function sendFailure (message: string, ctx: SendableContext, ephemeral = true): Promise<void> {
   await ctx.send(`${emoji.error} ${message}`, { ephemeral })
 }
+
+export function missingGuildId (context = ''): `I cannot determine which guild this command is being run from. ${string}` {
+  return `I cannot determine which guild this command is being run from. ${context}`
+}

@@ -12,6 +12,7 @@ import { errStack, errMessage, alphabetical, humanLikely } from '../utils'
 import {
   getAssignedGuilds,
   handleCommand,
+  missingGuildId,
   run,
   sendFailure,
   sendSuccess
@@ -22,23 +23,23 @@ export default class FilterCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
     super(creator, {
       name: 'filter',
-      description: 'Manage the filter system of the bot',
+      description: 'Manage the regex filter system of the bot',
       guildIDs: getAssignedGuilds({ includeMain: true, includeStaff: false }),
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'get',
-          description: 'Retrieve current filters'
+          description: 'Retrieve current filters.'
         },
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'add',
-          description: 'Add a new filter',
+          description: 'Add a new filter.',
           options: [
             {
               type: CommandOptionType.STRING,
               name: 'regex',
-              description: 'The regex to trigger with.',
+              description: 'The regex to trigger with. Supplied as-is, without / / syntax.',
               required: true
             }
           ]
@@ -46,7 +47,7 @@ export default class FilterCommand extends SlashCommand {
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'remove',
-          description: 'Remove a filter',
+          description: 'Remove a filter.',
           options: [
             {
               type: CommandOptionType.STRING,
@@ -119,22 +120,31 @@ export default class FilterCommand extends SlashCommand {
 
   private async add (ctx: CommandContext): Promise<void> {
     const { options, guildID } = ctx
-    const { regex } = options.add as {
+    const { regex: rawRegex } = options.add as {
       regex: string
     }
 
     if (!guildID) {
       await sendFailure(
-        'I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.',
+        missingGuildId(),
         ctx
       )
+      return
+    }
+
+    let regex: RegExp
+
+    try {
+      regex = new RegExp(rawRegex)
+    } catch (err) {
+      await sendFailure(`Regex \`/${rawRegex}/\` is invalid: ${errMessage(rawRegex)}`, ctx)
       return
     }
 
     try {
       await prisma.filter.create({
         data: {
-          regex
+          regex: regex.source
         }
       })
 
@@ -147,10 +157,10 @@ export default class FilterCommand extends SlashCommand {
       )
     } catch (err) {
       logger.error(
-        `Failed to add filter /${regex}/: ${errStack(err)}`
+        `Failed to add filter /${regex.source}/: ${errStack(err)}`
       )
       await sendFailure(
-        `Failed to add filter \`/${regex}\`/: ${errMessage(err)}`,
+        `Failed to add filter \`/${regex.source}\`/: ${errMessage(err)}`,
         ctx,
         false
       )
@@ -163,17 +173,15 @@ export default class FilterCommand extends SlashCommand {
 
     if (!guildID) {
       await sendFailure(
-        'I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.',
+        missingGuildId(),
         ctx
       )
       return
     }
 
-    if (
-      !(await prisma.filter.findFirst({ where: { id: filterCuid } }))
-    ) {
+    if (!(await prisma.filter.findFirst({ where: { id: filterCuid } }))) {
       await sendFailure(
-        'That filter does not exist',
+        'That filter does not exist.',
         ctx
       )
       return
@@ -197,7 +205,7 @@ export default class FilterCommand extends SlashCommand {
         )}`
       )
       await sendFailure(
-        `Failed to remove filter ${filterCuid}: ${errMessage(err)}`,
+        `Failed to remove filter: ${errMessage(err)}`,
         ctx,
         false
       )

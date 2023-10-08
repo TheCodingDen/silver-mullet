@@ -1,12 +1,12 @@
 import { Message } from 'discord.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import prisma from '../clients/prisma'
-import actions from '../detection/actions'
+import actions, { actionFilterHit } from '../detection/actions'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
 import { errStack } from '../utils/index'
 import Nilsimsa from '../vendor/nilsimsa'
 import { retryCallback } from '../utils/retry'
-import { actionFilterHit, executeFilterDetection } from '../detection/filter-detection'
+import { executeFilterDetection } from '../detection/filter-detection'
 
 // Store currently executing actions per user, so that we get order between actions as to avoid collision
 const actionPromises = new Map<string, Promise<unknown>>()
