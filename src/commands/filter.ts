@@ -135,10 +135,6 @@ export default class FilterCommand extends SlashCommand {
       flags = ''
     }
 
-    if (flags === undefined) {
-      flags = 'g'
-    }
-
     let regex: RegExp
 
     try {
@@ -149,7 +145,7 @@ export default class FilterCommand extends SlashCommand {
     }
 
     try {
-      await prisma.filter.create({
+      const { flags: newFlags } = await prisma.filter.create({
         data: {
           regex: regex.source,
           flags
@@ -157,10 +153,10 @@ export default class FilterCommand extends SlashCommand {
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex.source}/${flags}`
+        `${ctx.user.username} added filter /${regex.source}/${newFlags}`
       )
       await sendSuccess(
-        `Added filter \`/${regex.source}/${flags}\`.`,
+        `Added filter \`/${regex.source}/${newFlags}\`.`,
         ctx
       )
     } catch (err) {
