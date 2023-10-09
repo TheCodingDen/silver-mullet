@@ -4,7 +4,7 @@ import _ from 'lodash'
 import client from '../clients/discord'
 import prisma from '../clients/prisma'
 import { errMessage, errStack } from '../utils'
-import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
+import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess, GuildCommandContext } from '../utils/commands'
 
 export default class ConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -113,14 +113,9 @@ export default class ConfigCommand extends SlashCommand {
     await ctx.send(content, { ephemeral: true })
   }
 
-  private async assign (ctx: CommandContext): Promise<void> {
+  private async assign (ctx: GuildCommandContext): Promise<void> {
     const { options, guildID } = ctx
     const { role: roleID, group } = options.assign as { role: string, group: PermissionGroup }
-
-    if (!guildID) {
-      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being assigned.', ctx)
-      return
-    }
 
     try {
       await prisma.permissionGroupMapping.upsert({
@@ -147,14 +142,9 @@ export default class ConfigCommand extends SlashCommand {
     }
   }
 
-  private async remove (ctx: CommandContext): Promise<void> {
+  private async remove (ctx: GuildCommandContext): Promise<void> {
     const { options, guildID } = ctx
     const { role: roleID } = options.remove as { role: string }
-
-    if (!guildID) {
-      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these permissions are being removed.', ctx)
-      return
-    }
 
     if (!await prisma.permissionGroupMapping.findFirst({ where: { roleID } })) {
       await sendFailure('That role is not assigned to a permission group.', ctx)

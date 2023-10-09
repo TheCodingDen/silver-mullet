@@ -58,7 +58,7 @@ enum AntiSpamAction {
 }
 
 model AntiSpamActionMapping {
-  id      String          @id @default(cuid())
+  id String @id @default(cuid())
 
   points Int
   action AntiSpamAction
@@ -74,4 +74,9 @@ model PointOverride {
 
   settingsVersion Int
   settings        CrossChannelAntiSpamSettings @relation("pointOverrides", fields: [settingsVersion], references: [version], onDelete: Cascade)
+}
+
+model Filter {
+  id    String @id @default(cuid())
+  regex String
 }

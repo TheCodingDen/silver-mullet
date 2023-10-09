@@ -10,8 +10,10 @@ import { errStack } from '../utils/index'
 import { retryCallback } from '../utils/retry'
 import { DetectionResult } from './spam-detection'
 import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser, handleRetryResult } from './utils'
+import { FilterDetectionResult } from './filter-detection'
+import { embedBase, messageLink } from '../utils/discordUtils'
 
-const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
+export const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
@@ -306,6 +308,58 @@ async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, new
   } catch (err) {
     logger.warn(`Queue message ${queueMessageId} was not found, presumably it was deleted, ignoring`)
   }
+}
+
+export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    const [banResult, messageResult] = await Promise.all([
+      retryCallback(async () => await member.ban({
+        reason: 'Spam detected.'
+      }), {
+        attempts: 3,
+        errorPredicate: ignoreFailedDeliver
+      }),
+      retryCallback(async () => await messageUser(member.user, {
+        content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+      }), {
+        attempts: 3,
+        errorPredicate: ignoreFailedDeliver
+      })
+    ])
+
+    handleRetryResult(banResult, `When banning user ${member.user.username}`)
+    handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
+  } else {
+    const result = await retryCallback(async () => await messageUser(member.user, {
+      content: `You would have been banned from ${member.guild.name} due to spam (through filter \`/${hit.trippedFilter.regex}/\`).`
+    }), {
+      attempts: 1
+    })
+
+    handleRetryResult(result, `When fake banning ${member.user.username}`)
+  }
+
+  const logChannel = await getLogChannel(hit.message.guild)
+
+  await logChannel.send({
+    embeds: [{
+      ...embedBase(),
+      title: 'Filter triggered',
+      color: color.red,
+      author: {
+        name: `@${member.user.username}`,
+        icon_url: member.user.displayAvatarURL()
+      },
+      description: `
+          **Triggered by** (${messageLink({ guildId: hit.message.guild.id, messageId: hit.message.id, channelId: hit.message.channelId })}):
+          \`\`\`
+${hit.message.content.trimStart().trimEnd() || '<no-content>'}
+          \`\`\` 
+          **Action taken**:
+          BAN
+        `
+    }]
+  })
 }
 
 export default actions

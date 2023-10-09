@@ -1,11 +1,12 @@
 import { Message } from 'discord.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import prisma from '../clients/prisma'
-import actions from '../detection/actions'
+import actions, { actionFilterHit } from '../detection/actions'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
 import { errStack } from '../utils/index'
 import Nilsimsa from '../vendor/nilsimsa'
 import { retryCallback } from '../utils/retry'
+import { executeFilterDetection } from '../detection/filter-detection'
 
 // Store currently executing actions per user, so that we get order between actions as to avoid collision
 const actionPromises = new Map<string, Promise<unknown>>()
@@ -52,6 +53,20 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
+  const messageToCache = {
+    messageId: message.id,
+    authorId: message.author.id,
+    channelId: message.channel.id,
+    content: message.content,
+    hexHash: new Nilsimsa(message.content).digest('hex')
+  }
+
+  const filterResult = await executeFilterDetection(message)
+  if (filterResult) {
+    await actionFilterHit(filterResult, member)
+    return
+  }
+
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     orderBy: {
       version: 'desc'
@@ -79,14 +94,6 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   const authorMessages = authorMessagesResult.value
   logger.debug(`Got ${authorMessages.length} messages from ${message.author.id}`)
-
-  const messageToCache = {
-    messageId: message.id,
-    authorId: message.author.id,
-    channelId: message.channel.id,
-    content: message.content,
-    hexHash: new Nilsimsa(message.content).digest('hex')
-  }
 
   await addMessage(messageToCache, settings.cacheTTLSeconds)
 
