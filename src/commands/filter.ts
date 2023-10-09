@@ -45,7 +45,7 @@ export default class FilterCommand extends SlashCommand {
             {
               type: CommandOptionType.STRING,
               name: 'flags',
-              description: 'The flags to use. defaults to "g". Pass "none" to have no flags. Strings are automatically lowercased, so "i" has no effect.',
+              description: 'The flags to use. Defaults to "g", "i" is always enabled. Pass "none" to have no flags.',
               required: false
             }
           ]
