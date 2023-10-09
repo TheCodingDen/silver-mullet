@@ -119,7 +119,7 @@ export default class FilterCommand extends SlashCommand {
 
     const content = allFilters
       .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags})`)
-      .join('\n') || 'No filters set'
+      .join('\n') || 'No filters set.'
 
     await ctx.send(content)
   }
@@ -157,10 +157,10 @@ export default class FilterCommand extends SlashCommand {
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex.source}/ with flags \`${flags}\``
+        `${ctx.user.username} added filter /${regex.source}/${flags}`
       )
       await sendSuccess(
-        `Added filter \`/${regex.source}/\` with flags \`${flags}`,
+        `Added filter \`/${regex.source}/${flags}\`.`,
         ctx
       )
     } catch (err) {
