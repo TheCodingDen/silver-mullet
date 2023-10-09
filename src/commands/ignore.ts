@@ -57,22 +57,26 @@ export default class IgnoreCommand extends SlashCommand {
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const { focused, options } = ctx
+    const { focused, options, guildID } = ctx
 
     switch (focused) {
       case 'entity': {
-        const ignoredEntities = await prisma.ignore.findMany({})
-
-        if (!ctx.guildID) {
+        if (!guildID) {
           logger.warn('Could not fulfill autocomplete request, request came from DMs')
           return []
         }
 
-        if (!ignoredEntities) {
+        const ignoredEntities = await prisma.ignore.findMany({
+          where: {
+            guildId: guildID
+          }
+        })
+
+        if (ignoredEntities.length === 0) {
           return []
         }
 
-        const guild = await discord.guilds.fetch(ctx.guildID)
+        const guild = await discord.guilds.fetch(guildID)
 
         // Mappings to allow us to go easily between entity names, and their entities, by their CUID
         const entityToDiscord: Record<string, GuildBasedChannel | Role | User> = {}
@@ -160,6 +164,7 @@ export default class IgnoreCommand extends SlashCommand {
       await prisma.ignore.create({
         data: {
           snowflake: discordEntity.id,
+          guildId: discordEntity.guild.id,
           type: entityType
         }
       })
