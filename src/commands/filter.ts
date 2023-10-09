@@ -136,7 +136,7 @@ export default class FilterCommand extends SlashCommand {
     }
 
     if (flags === undefined) {
-      flags = 'gi'
+      flags = 'g'
     }
 
     let regex: RegExp
