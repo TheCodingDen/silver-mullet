@@ -57,33 +57,32 @@ export default class IgnoreCommand extends SlashCommand {
   }
 
   async autocomplete (ctx: AutocompleteContext): Promise<AutocompleteChoice[]> {
-    const { focused, options } = ctx
+    const { focused, options, guildID } = ctx
 
     switch (focused) {
       case 'entity': {
-        const ignoredEntities = await prisma.ignore.findMany({})
-
-        if (!ctx.guildID) {
+        if (!guildID) {
           logger.warn('Could not fulfill autocomplete request, request came from DMs')
           return []
         }
 
-        if (!ignoredEntities) {
+        const ignoredEntities = await prisma.ignore.findMany({
+          where: {
+            guildId: guildID
+          }
+        })
+
+        if (ignoredEntities.length === 0) {
           return []
         }
 
-        const guild = await discord.guilds.fetch(ctx.guildID)
+        const guild = await discord.guilds.fetch(guildID)
 
         // Mappings to allow us to go easily between entity names, and their entities, by their CUID
         const entityToDiscord: Record<string, GuildBasedChannel | Role | User> = {}
         const entityToName: Record<string, string> = {}
 
         for (const ignore of ignoredEntities) {
-          if (ignore.guildId !== ctx.guildID) {
-            logger.debug(`Skipping entity ${ignore.snowflake} as it does not exist in this guild`)
-            continue
-          }
-
           const discordData = await fetchers[ignore.type](ignore.snowflake, guild)
           if (!discordData) {
             logger.warn(`Ignored entity "${ignore.id}" (${ignore.snowflake}) could not be resolved in Discord, does it still exist?`)
