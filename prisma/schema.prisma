@@ -20,6 +20,7 @@ model Ignore {
   id        String       @id @default(cuid())
   type      IgnoreTarget
   snowflake String       @unique
+  guildId   String
 }
 
 enum PermissionGroup {

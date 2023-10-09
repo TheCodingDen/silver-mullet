@@ -79,6 +79,11 @@ export default class IgnoreCommand extends SlashCommand {
         const entityToName: Record<string, string> = {}
 
         for (const ignore of ignoredEntities) {
+          if (ignore.guildId !== ctx.guildID) {
+            logger.debug(`Skipping entity ${ignore.snowflake} as it does not exist in this guild`)
+            continue
+          }
+
           const discordData = await fetchers[ignore.type](ignore.snowflake, guild)
           if (!discordData) {
             logger.warn(`Ignored entity "${ignore.id}" (${ignore.snowflake}) could not be resolved in Discord, does it still exist?`)
@@ -160,6 +165,7 @@ export default class IgnoreCommand extends SlashCommand {
       await prisma.ignore.create({
         data: {
           snowflake: discordEntity.id,
+          guildId: discordEntity.guild.id,
           type: entityType
         }
       })
