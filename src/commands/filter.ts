@@ -41,6 +41,12 @@ export default class FilterCommand extends SlashCommand {
               name: 'regex',
               description: 'The regex to trigger with. Supplied as-is, without / / syntax.',
               required: true
+            },
+            {
+              type: CommandOptionType.STRING,
+              name: 'flags',
+              description: 'The flags to use. defaults to "gi". Must be a collection of "g, i, d, m, s, u, v, y", or "none"',
+              required: false
             }
           ]
         },
@@ -85,7 +91,7 @@ export default class FilterCommand extends SlashCommand {
 
         return filters
           .filter(option => humanLikely(input, likely, idToRegex[option.id]))
-          .map(option => ({ name: `/${idToRegex[option.id]}/`, value: option.id }))
+          .map(option => ({ name: `/${idToRegex[option.id]}/${option.flags}`, value: option.id }))
           .sort(alphabetical)
       }
       default:
@@ -112,7 +118,7 @@ export default class FilterCommand extends SlashCommand {
     const allFilters = await prisma.filter.findMany({})
 
     const content = allFilters
-      .map((f, i) => `${i}: \`/${f.regex}/\``)
+      .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags})`)
       .join('\n') || 'No filters set'
 
     await ctx.send(content)
@@ -120,31 +126,41 @@ export default class FilterCommand extends SlashCommand {
 
   private async add (ctx: GuildCommandContext): Promise<void> {
     const { options } = ctx
-    const { regex: rawRegex } = options.add as {
+    let { regex: rawRegex, flags } = options.add as {
       regex: string
+      flags: string
+    }
+
+    if (flags === 'none') {
+      flags = ''
+    }
+
+    if (flags === undefined) {
+      flags = 'gi'
     }
 
     let regex: RegExp
 
     try {
-      regex = new RegExp(rawRegex)
+      regex = new RegExp(rawRegex, flags)
     } catch (err) {
-      await sendFailure(`Regex \`/${rawRegex}/\` is invalid: ${errMessage(rawRegex)}`, ctx)
+      await sendFailure(`Regex \`/${rawRegex}/\` is invalid: ${errMessage(err)}`, ctx)
       return
     }
 
     try {
       await prisma.filter.create({
         data: {
-          regex: regex.source
+          regex: regex.source,
+          flags
         }
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex}/`
+        `${ctx.user.username} added filter /${regex.source}/ with flags \`${flags}\``
       )
       await sendSuccess(
-        `Added filter \`/${regex}/\``,
+        `Added filter \`/${regex.source}/\` with flags \`${flags}`,
         ctx
       )
     } catch (err) {

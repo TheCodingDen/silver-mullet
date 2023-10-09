@@ -79,4 +79,5 @@ model PointOverride {
 model Filter {
   id    String @id @default(cuid())
   regex String
+  flags String @default("gi")
 }

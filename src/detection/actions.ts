@@ -357,6 +357,9 @@ ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\` 
           **Action taken**:
           BAN
+
+          **Filter**:
+          \`/${hit.trippedFilter.regex}/\`${hit.trippedFilter.flags}
         `
     }]
   })
