@@ -10,9 +10,9 @@ import {
 import prisma from '../clients/prisma'
 import { errStack, errMessage, alphabetical, humanLikely } from '../utils'
 import {
+  GuildCommandContext,
   getAssignedGuilds,
   handleCommand,
-  missingGuildId,
   run,
   sendFailure,
   sendSuccess
@@ -108,7 +108,7 @@ export default class FilterCommand extends SlashCommand {
     })
   }
 
-  private async get (ctx: CommandContext): Promise<void> {
+  private async get (ctx: GuildCommandContext): Promise<void> {
     const allFilters = await prisma.filter.findMany({})
 
     const content = allFilters
@@ -118,18 +118,10 @@ export default class FilterCommand extends SlashCommand {
     await ctx.send(content)
   }
 
-  private async add (ctx: CommandContext): Promise<void> {
-    const { options, guildID } = ctx
+  private async add (ctx: GuildCommandContext): Promise<void> {
+    const { options } = ctx
     const { regex: rawRegex } = options.add as {
       regex: string
-    }
-
-    if (!guildID) {
-      await sendFailure(
-        missingGuildId(),
-        ctx
-      )
-      return
     }
 
     let regex: RegExp
@@ -167,17 +159,9 @@ export default class FilterCommand extends SlashCommand {
     }
   }
 
-  private async remove (ctx: CommandContext): Promise<void> {
-    const { options, guildID } = ctx
+  private async remove (ctx: GuildCommandContext): Promise<void> {
+    const { options } = ctx
     const { filter: filterCuid } = options.remove as { filter: string }
-
-    if (!guildID) {
-      await sendFailure(
-        missingGuildId(),
-        ctx
-      )
-      return
-    }
 
     if (!(await prisma.filter.findFirst({ where: { id: filterCuid } }))) {
       await sendFailure(

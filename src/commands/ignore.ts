@@ -6,7 +6,7 @@ import { SlashCommand, SlashCreator, CommandContext, CommandOptionType, Autocomp
 import discord from '../clients/discord'
 import prisma from '../clients/prisma'
 import { alphabetical, errMessage, errStack, humanLikely } from '../utils/index'
-import { getAssignedGuilds, handleCommand, run, sendFailure, sendSuccess } from '../utils/commands'
+import { GuildCommandContext, getAssignedGuilds, handleCommand, run, sendFailure, sendSuccess } from '../utils/commands'
 
 const fetchers = {
   CATEGORY: async (id: string, guild: Guild) => await guild.channels.fetch(id),
@@ -120,13 +120,8 @@ export default class IgnoreCommand extends SlashCommand {
     })
   }
 
-  private async add (ctx: CommandContext): Promise<void> {
+  private async add (ctx: GuildCommandContext): Promise<void> {
     const { options, guildID } = ctx
-
-    if (!guildID) {
-      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these ignores are being modified.', ctx)
-      return
-    }
 
     const guild = await discord.guilds.fetch(guildID)
 
@@ -179,13 +174,8 @@ export default class IgnoreCommand extends SlashCommand {
     }
   }
 
-  private async remove (ctx: CommandContext): Promise<void> {
+  private async remove (ctx: GuildCommandContext): Promise<void> {
     const { options, guildID } = ctx
-
-    if (!guildID) {
-      await sendFailure('I cannot determine which guild this command is being run from. It must be run in the target guild where these ignores are being modified.', ctx)
-      return
-    }
 
     const guild = await discord.guilds.fetch(guildID)
     // CUID of ignored item

@@ -3,7 +3,11 @@ import { CommandContext, Message, MessageOptions, SlashCommand } from 'slash-cre
 import prisma from '../clients/prisma'
 import emoji from './emoji'
 
-export type CommandFunction = (ctx: CommandContext) => unknown
+export class GuildCommandContext extends CommandContext {
+  declare guildID: string
+}
+
+export type CommandFunction = (ctx: GuildCommandContext) => unknown
 
 // Symbols solve various issues here.
 // 1) Declaring a known key in conjunction with an index declaration (https://github.com/microsoft/TypeScript/issues/17867#issuecomment-1025104103)
@@ -126,10 +130,17 @@ export const getAssignedGuilds = (opts?: { includeMain?: boolean, includeStaff?:
 
 export async function handleCommand (
   instance: SlashCommand,
-  ctx: CommandContext,
+  _ctx: CommandContext,
   allowedGroups: PermissionGroup[],
   subcommandTree: CommandBase
 ): Promise<void> {
+  if (!_ctx.guildID) {
+    await sendFailure('This command is not available in DMs.', _ctx)
+    return
+  }
+
+  const ctx = _ctx as GuildCommandContext
+
   const permissionAssertionResult = await assertPermissionGroupMembership(allowedGroups, ctx)
 
   switch (permissionAssertionResult) {
@@ -169,8 +180,4 @@ export async function sendSuccess (message: string, ctx: SendableContext, epheme
 
 export async function sendFailure (message: string, ctx: SendableContext, ephemeral = true): Promise<void> {
   await ctx.send(`${emoji.error} ${message}`, { ephemeral })
-}
-
-export function missingGuildId (context = ''): `I cannot determine which guild this command is being run from. ${string}` {
-  return `I cannot determine which guild this command is being run from. ${context}`
 }
