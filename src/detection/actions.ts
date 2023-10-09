@@ -359,7 +359,7 @@ ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
           BAN
 
           **Filter**:
-          \`/${hit.trippedFilter.regex}/\`${hit.trippedFilter.flags}
+          \`/${hit.trippedFilter.regex}/${hit.trippedFilter.flags}\`
         `
     }]
   })
