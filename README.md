@@ -36,7 +36,7 @@ Silver Mullet's highlight features are largely inherited from its forebear, http
 
 Silver Mullet's flagship feature is Cross-Channel Anti-Spam (CCAS), which uses [Nilsimsa hashing](https://en.wikipedia.org/wiki/Nilsimsa_Hash) to first and foremost enable fuzzy comparison of messages based on broad-strokes similarity, not just absolute equality. This is in an effort to dodge typical antispam countermeasures sometimes deployed by Discord spam malware, like random string addendums.
 
-However, its primary objective is to, by generating this hash for each message in the entire server and looking through all hashes for a given user each time they send a message, enable the system to automatically detect and shut down spam being spread across multiple channels - something that is usually proliferated by humans, and something most general-purpose automod systems are generally speaking powerless to defeat.
+However, its primary objective is to, by generating this hash for each message sent within the last ~5 minutes and looking through all hashes for a given user each time they send a message, enable the system to automatically detect and shut down spam being spread across multiple channels - something that is usually proliferated by humans, and something most general-purpose automod systems are generally speaking powerless to defeat.
 
 To further empower the system's detection capabilities, the bot supports configuring keywords that, when present in a message, give it additional detection weight in order to trip CCAS detection sooner. This enables shutdown of misconduct that is difficult or outright impossible to accurately filter with simple contextless regex matching, such as phishing link spam, in as little as 2 messages.
 
