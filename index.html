@@ -12,8 +12,36 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <h2>silver-mullet</h2></div>
-<div class="tsd-panel tsd-typography"><a id="md:silver-mullet" class="tsd-anchor"></a><h1><a href="#md:silver-mullet">Silver Mullet</a></h1><p>The third attempt at making our own automod bot</p>
-<a id="md:setup-notes" class="tsd-anchor"></a><h2><a href="#md:setup-notes">Setup notes</a></h2><p>Per default, the bot database starts out empty. This means nobody has permissions to operate on even the infra admin-only commands, and the CCAS config database will be empty (which needs to be populated for most purposes). Therefore, do remember to populate those tables with appropriate values before starting the bot the first time, or when starting it after a database reset.</p>
+<div class="tsd-panel tsd-typography"><a id="md:silver-mullet" class="tsd-anchor"></a><h1><a href="#md:silver-mullet">Silver Mullet</a></h1><img src="doc/logo.jpg" width="128px" height="auto">
+
+<p><em>&quot;Not all heroes wear capes; some of them wear terribly dated hockey haircuts.&quot;</em></p>
+<p>Silver Mullet represents our third attempt at making our own, in-house automod bot. This bot is meant to be a lean, easy-to-develop, simplest-thing-that-works solution for automatic moderation, which simply patches in some of the gaps that cannot be fulfilled by either Zeppelin, Beemo or Discord&#39;s integrated automod. It is <em>not</em> supposed to be a solution to all of our problems at all times; it simply aims to solve some very specific problems in very specific ways, and do well in serving those narrow use cases.</p>
+<p>In other words: <em>This is not a silver bullet, it&#39;s a silver mullet.</em></p>
+<p>To achieve this goal, this bot is built with simple, ubiquitous, industry-standard, stable* technology (and development should strive to keep things that way). These technologies were not chosen on the basis of achieving the highest performing, most elegant, technically novel, developer-ergonomic or architecturally impressive solution. They were simply chosen by <a href="https://en.wikipedia.org/wiki/Principle_of_least_astonishment">principle of least astonishment</a>, with attention paid to the other factors listed above only <em>after</em> the technology had passed this first litmus test. The idea behind this is to ensure the system has a low barrier to entry for continued development, thereby extending its potential lifespan.</p>
+<p>With that in mind, Silver Mullet is backed by the following technologies:</p>
+<ul>
+<li>TypeScript</li>
+<li>PostgreSQL over Prisma as the main backing database</li>
+<li>Redis over redis-om for message caching</li>
+<li>Docker Compose to glue the dev setup together</li>
+<li>discord.js with slash-create to interface with Discord</li>
+</ul>
+<p><em>* = well, as stable as it can be, considering Discord and discord.js are involved...</em></p>
+<a id="md:features-and-technical-execution" class="tsd-anchor"></a><h2><a href="#md:features-and-technical-execution">Features and technical execution</a></h2><blockquote>
+<p>⛔️ <strong>Classified information ahead</strong> ⛔️</p>
+<p>Silver Mullet represents the most sophisticated anti-spam system ever deployed to TCD, and is on the cutting edge of technology even by general moderation bot standards. Like any anti-spam system, its effectiveness in no small part hinges on its configuration parameters and details of its technical execution being kept away from public eye.</p>
+<p>Even with regard to the general confidentiality level of TCD staff operations, this bears stating separately: The following sections are highly classified information. <strong>IT IS <em>STRICTLY FORBIDDEN</em> TO DISCLOSE ANY PARAMETERS, DETECTION ALGORITHMS, OR <em>ANY OTHER TECHNICAL DETAILS OF ANY SORT</em> ABOUT THIS SYSTEM OUTSIDE OF THE STAFF TEAM.</strong></p>
+<p>The easiest way to ensure you do not disclose too much is to simply refuse to answer any questions about this system to the public, other than stating that it&#39;s our in-house anti-spam system (and nothing more).</p>
+</blockquote>
+<p>Silver Mullet&#39;s highlight features are largely inherited from its forebear, <a href="https://github.com/TheCodingDen/mini-slash">https://github.com/TheCodingDen/mini-slash</a>, but it does have some ideas of its own as well, with the intent of adding more as time goes on. These will be detailed below.</p>
+<a id="md:cross-channel-anti-spam-ccas" class="tsd-anchor"></a><h3><a href="#md:cross-channel-anti-spam-ccas">Cross-Channel Anti-Spam (CCAS)</a></h3><p>Silver Mullet&#39;s flagship feature is Cross-Channel Anti-Spam (CCAS), which uses <a href="https://en.wikipedia.org/wiki/Nilsimsa_Hash">Nilsimsa hashing</a> to first and foremost enable fuzzy comparison of messages based on broad-strokes similarity, not just absolute equality. This is in an effort to dodge typical antispam countermeasures sometimes deployed by Discord spam malware, like random string addendums.</p>
+<p>However, its primary objective is to, by generating this hash for each message sent within the last ~5 minutes and looking through all hashes for a given user each time they send a message, enable the system to automatically detect and shut down spam being spread across multiple channels - something that is usually proliferated by humans, and something most general-purpose automod systems are generally speaking powerless to defeat.</p>
+<p>To further empower the system&#39;s detection capabilities, the bot supports configuring keywords that, when present in a message, give it additional detection weight in order to trip CCAS detection sooner. This enables shutdown of misconduct that is difficult or outright impossible to accurately filter with simple contextless regex matching, such as phishing link spam, in as little as 2 messages.</p>
+<a id="md:rapid-deployment-regex-filters" class="tsd-anchor"></a><h3><a href="#md:rapid-deployment-regex-filters">Rapid-deployment regex filters</a></h3><p>Silver Mullet supports adding simple regex filters with slash commands, enabling speedy deployment of filters even from mobile clients, thus permitting rapid response to emerging spam incidents. In contrast to general-purpose systems like Zeppelin, the system is un-granular by design, featuring a dead-simple &quot;match = ban&quot; pattern in order to maximally shorten time to response from the staff team during an active situation.</p>
+<a id="md:development" class="tsd-anchor"></a><h2><a href="#md:development">Development</a></h2><p>To get started, here&#39;s a crash course:</p>
+<pre><code class="language-bash"><span class="hl-0"># Install correct Node version</span><br/><span class="hl-1">nvm</span><span class="hl-2"> </span><span class="hl-3">use</span><br/><br/><span class="hl-0"># Install dependencies</span><br/><span class="hl-1">npm</span><span class="hl-2"> </span><span class="hl-3">i</span><br/><br/><span class="hl-0"># Configure bot settings. Ask infra for a sensible default configuration, including auth to the preset dev bot that&#39;s present in the development guild</span><br/><span class="hl-1">cp</span><span class="hl-2"> </span><span class="hl-3">.env.example</span><span class="hl-2"> </span><span class="hl-3">.env</span><br/><br/><span class="hl-0"># Bootstrap dev environment</span><br/><span class="hl-0"># Before starting, if you want to have infra admin powers with the bot, edit init-local-dev-db.sql (don&#39;t commit changes)</span><br/><span class="hl-1">npm</span><span class="hl-2"> </span><span class="hl-3">run</span><span class="hl-2"> </span><span class="hl-3">bootstrap</span><br/><br/><span class="hl-0"># Start and get coding</span><br/><span class="hl-1">npm</span><span class="hl-2"> </span><span class="hl-3">run</span><span class="hl-2"> </span><span class="hl-3">dev</span>
+</code><button>Copy</button></pre>
+<p>To run the unit tests, run <code>npm t -- npm run test:base</code>.</p>
 </div></div>
 <div class="col-sidebar">
 <div class="page-menu">
@@ -39,7 +67,12 @@
 <li><a href="#md:silver-mullet"><span>Silver <wbr/>Mullet</span></a></li>
 <li>
 <ul>
-<li><a href="#md:setup-notes"><span>Setup notes</span></a></li></ul></li></ul></li></ul></div></details></div>
+<li><a href="#md:features-and-technical-execution"><span>Features and technical execution</span></a></li>
+<li>
+<ul>
+<li><a href="#md:cross-channel-anti-spam-ccas"><span>Cross-<wbr/>Channel <wbr/>Anti-<wbr/>Spam (CCAS)</span></a></li>
+<li><a href="#md:rapid-deployment-regex-filters"><span>Rapid-<wbr/>deployment regex filters</span></a></li></ul></li>
+<li><a href="#md:development"><span>Development</span></a></li></ul></li></ul></li></ul></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="modules.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-4"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-namespace)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M9.33 16V7.24H10.77L13.446 14.74C13.43 14.54 13.41 14.296 13.386 14.008C13.37 13.712 13.354 13.404 13.338 13.084C13.33 12.756 13.326 12.448 13.326 12.16V7.24H14.37V16H12.93L10.266 8.5C10.282 8.692 10.298 8.936 10.314 9.232C10.33 9.52 10.342 9.828 10.35 10.156C10.366 10.476 10.374 10.784 10.374 11.08V16H9.33Z" fill="var(--color-text)"></path></g></svg><span>silver-<wbr/>mullet</span></a>
 <ul class="tsd-small-nested-navigation"></ul></nav></div></div></div>
