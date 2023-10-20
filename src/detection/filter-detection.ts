@@ -1,14 +1,15 @@
 import { Filter } from '@prisma/client'
-import { Message } from 'discord.js'
 import prisma from '../clients/prisma'
 import decancer from 'decancer'
+import { CachedMessage } from '../clients/redis'
 
 export interface FilterDetectionResult {
   trippedFilter: Filter
-  message: Message<true>
+  message: CachedMessage
+  guildId: string
 }
 
-export async function executeFilterDetection (message: Message<true>): Promise<FilterDetectionResult | undefined> {
+export async function executeFilterDetection (message: CachedMessage, guildId: string): Promise<FilterDetectionResult | undefined> {
   const filters = await prisma.filter.findMany({})
   const content = decancer(message.content).toString()
 
@@ -20,7 +21,8 @@ export async function executeFilterDetection (message: Message<true>): Promise<F
   if (matchedFilter) {
     return {
       trippedFilter: matchedFilter,
-      message
+      message,
+      guildId
     }
   }
 }

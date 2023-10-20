@@ -1,4 +1,4 @@
-import { Message } from 'discord.js'
+import { Message, MessageType } from 'discord.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import prisma from '../clients/prisma'
 import actions, { actionFilterHit } from '../detection/actions'
@@ -7,12 +7,23 @@ import { errStack } from '../utils/index'
 import Nilsimsa from '../vendor/nilsimsa'
 import { retryCallback } from '../utils/retry'
 import { executeFilterDetection } from '../detection/filter-detection'
+import { CachedMessage } from '../clients/redis'
+
+const IGNORED_TYPES: MessageType[] = [
+  // Ignore "system automod logs" because they cause confusing
+  // (Discord makes it look like the user who tripped the automod sent this log)
+  MessageType.AutoModerationAction
+]
 
 // Store currently executing actions per user, so that we get order between actions as to avoid collision
 const actionPromises = new Map<string, Promise<unknown>>()
 
 export async function onGuildMessage (message: Message): Promise<void> {
   if (message.author.bot || message.channel.isDMBased() || !message.inGuild()) {
+    return
+  }
+
+  if (IGNORED_TYPES.includes(message.type)) {
     return
   }
 
@@ -53,15 +64,15 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
-  const messageToCache = {
-    messageId: message.id,
+  const messageToCache: CachedMessage = {
+    eventId: message.id,
     authorId: message.author.id,
     channelId: message.channel.id,
     content: message.content,
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(message)
+  const filterResult = await executeFilterDetection(messageToCache, message.guild.id)
   if (filterResult) {
     await actionFilterHit(filterResult, member)
     return

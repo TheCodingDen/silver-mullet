@@ -339,7 +339,8 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     handleRetryResult(result, `When fake banning ${member.user.username}`)
   }
 
-  const logChannel = await getLogChannel(hit.message.guild)
+  const guild = await client.guilds.fetch(hit.guildId)
+  const logChannel = await getLogChannel(guild)
 
   await logChannel.send({
     embeds: [{
@@ -351,7 +352,7 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
         icon_url: member.user.displayAvatarURL()
       },
       description: `
-          **Triggered by** (${messageLink({ guildId: hit.message.guild.id, messageId: hit.message.id, channelId: hit.message.channelId })}):
+          **Triggered by** (${messageLink({ guildId: hit.guildId, messageId: hit.message.eventId, channelId: hit.message.channelId })}):
           \`\`\`
 ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\` 

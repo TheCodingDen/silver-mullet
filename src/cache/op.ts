@@ -9,13 +9,13 @@ const expireActionAfterUpgradeSeconds = 15
 const expireUnactionedActionSeconds = 60 * 60 * 24 * 7
 
 export async function addMessage (message: CachedMessage, expireAfterSeconds: number): Promise<Entity> {
-  const result = await messageRepository.save(message.messageId, message)
-  await messageRepository.expire(message.messageId, expireAfterSeconds)
+  const result = await messageRepository.save(message.eventId, message)
+  await messageRepository.expire(message.eventId, expireAfterSeconds)
   return result
 }
 
 export async function removeMessage (message: CachedMessage): Promise<void> {
-  return void messageRepository.remove(message.messageId)
+  return void messageRepository.remove(message.eventId)
 }
 
 export async function fetchMessageById (messageId: string): Promise<CachedMessage> {
