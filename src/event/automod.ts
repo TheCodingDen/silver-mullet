@@ -27,8 +27,13 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     return
   }
 
-  if (!user || !channel || channel.isDMBased()) {
-    // FIXME: What should we do if there's no user/channel?
+  if (!user || !channel) {
+    logger.error(`Cannot action AutoMod event, the event is missing critical details (user: @${user?.username ?? '<unknown-user>'}, channel: ${channel?.id ?? '<unknown-channel>'})`)
+    return
+  }
+
+  if (channel.isDMBased()) {
+    logger.error(`Somehow got an automod event from a "DM based" channel: ${channel.id}`)
     return
   }
 
