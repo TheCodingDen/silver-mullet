@@ -23,7 +23,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
   // 2) All automod executions in TCD should be logged. If not, there is a misconfiguration that should
   // be immediately reported
   if (!alertSystemMessageId) {
-    logger.error(`No log message recieved for automod rule ${event.ruleId} (name: ${event.autoModerationRule?.name})`)
+    logger.error(`No log message received for automod rule ${event.ruleId} (name: ${event.autoModerationRule?.name})`)
     return
   }
 
