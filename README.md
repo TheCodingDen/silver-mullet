@@ -2,7 +2,7 @@
 
 <img src="doc/logo.jpg" width="128px" height="auto">
 
-*"Not all heroes wear capes; some of them wear terribly dated hockey haircuts."*## Setup notes
+*"Not all heroes wear capes; some of them wear terribly dated hockey haircuts."*
 
 Silver Mullet represents our third attempt at making our own, in-house automod bot. This bot is meant to be a lean, easy-to-develop, simplest-thing-that-works solution for automatic moderation, which simply patches in some of the gaps that cannot be fulfilled by either Zeppelin, Beemo or Discord's integrated automod. It is *not* supposed to be a solution to all of our problems at all times; it simply aims to solve some very specific problems in very specific ways, and do well in serving those narrow use cases.
 
