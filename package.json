@@ -22,7 +22,7 @@
     "lint": "eslint . --ext .ts",
     "doc": "typedoc --out docs src",
     "deploy-migrations": "prisma migrate deploy",
-    "bootstrap": "docker compose up -d && POSTGRESQL_URI=postgres://postgres:password@127.0.0.1:5432/silver-mullet wait-for --postgresql && npm run deploy-migrations && prisma db execute --file scripts/init-local-dev-db.sql",
+    "bootstrap": "docker compose up -d --force-recreate --renew-anon-volumes && POSTGRESQL_URI=postgres://postgres:password@127.0.0.1:5432/silver-mullet wait-for -q --postgresql && npm run deploy-migrations && prisma db execute --file scripts/init-local-dev-db.sql",
     "prepare": "husky install"
   },
   "repository": {
