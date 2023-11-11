@@ -11,6 +11,7 @@ import prisma from '../clients/prisma'
 import { errStack, errMessage, alphabetical, humanLikely } from '../utils'
 import {
   GuildCommandContext,
+  allowFor,
   getAssignedGuilds,
   handleCommand,
   run,
@@ -23,7 +24,7 @@ export default class FilterCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
     super(creator, {
       name: 'filter',
-      description: 'Manage the regex filter system of the bot',
+      description: 'Manage the regex filter system of the bot.',
       guildIDs: getAssignedGuilds({ includeMain: true, includeStaff: false }),
       options: [
         {
@@ -34,7 +35,7 @@ export default class FilterCommand extends SlashCommand {
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'add',
-          description: 'Add a new filter.',
+          description: 'Add a new filter. Admins only.',
           options: [
             {
               type: CommandOptionType.STRING,
@@ -53,7 +54,7 @@ export default class FilterCommand extends SlashCommand {
         {
           type: CommandOptionType.SUB_COMMAND,
           name: 'remove',
-          description: 'Remove a filter.',
+          description: 'Remove a filter. Admins only.',
           options: [
             {
               type: CommandOptionType.STRING,
@@ -101,9 +102,10 @@ export default class FilterCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
-    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN], {
+    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN, PermissionGroup.ADMIN], {
       get: {
-        [run]: this.get.bind(this)
+        [run]: this.get.bind(this),
+        [allowFor]: [PermissionGroup.MODERATOR]
       },
       add: {
         [run]: this.add.bind(this)
@@ -117,11 +119,15 @@ export default class FilterCommand extends SlashCommand {
   private async get (ctx: GuildCommandContext): Promise<void> {
     const allFilters = await prisma.filter.findMany({})
 
-    const content = allFilters
-      .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags})`)
-      .join('\n') || 'No filters set.'
+    if (allFilters.length === 0) {
+      await ctx.send('No filters have been set.')
+    } else {
+      const content = allFilters
+        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags})`)
+        .join('\n') || 'No filters set.'
 
-    await ctx.send(content)
+      await ctx.send(content)
+    }
   }
 
   private async add (ctx: GuildCommandContext): Promise<void> {
