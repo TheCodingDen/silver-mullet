@@ -72,10 +72,14 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, undefined, message.guild.id)
+  const filterResult = await executeFilterDetection(messageToCache, message.guild.id)
   if (filterResult) {
-    await actionFilterHit(filterResult, member)
-    return
+    const didAction = await actionFilterHit(filterResult, member)
+    if (didAction) {
+      return
+    }
+
+    // Otherwise, if we could not action due to error, continue on to anti spam
   }
 
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({

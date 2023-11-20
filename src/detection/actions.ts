@@ -12,7 +12,6 @@ import { DetectionResult } from './spam-detection'
 import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser, handleRetryResult } from './utils'
 import { FilterDetectionResult } from './filter-detection'
 import { embedBase, messageLink } from '../utils/discordUtils'
-import emoji from '../utils/emoji'
 
 export const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
 
@@ -311,7 +310,9 @@ async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, new
   }
 }
 
-export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<void> {
+export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<boolean> {
+  let didSucceed = true
+
   if (process.env.NODE_ENV === 'production') {
     const [banResult, messageResult] = await Promise.all([
       retryCallback(async () => await member.ban({
@@ -331,11 +332,9 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     handleRetryResult(banResult, `When banning user ${member.user.username}`)
     handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
 
-    // If we were able to action, add an emoji to the automod message to indicate this
-    // Filters may be tripped from outside automod, though, so check that we actually have a message to react to.
-    const automodMessage = hit.automodMessage
-    if (banResult.success && messageResult.success && automodMessage) {
-      await automodMessage.react(emoji.success)
+    // Event if we could not message them, we still succeeded. Not our problem if the API failed or they have us blocked
+    if (!banResult.success) {
+      didSucceed = false
     }
   } else {
     const result = await retryCallback(async () => await messageUser(member.user, {
@@ -345,13 +344,13 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     })
 
     handleRetryResult(result, `When fake banning ${member.user.username}`)
-
-    // If we were able to action, add an emoji to the automod message to indicate this
-    // Filters may be tripped from outside automod, though, so check that we actually have a message to react to.
-    const automodMessage = hit.automodMessage
-    if (result.success && automodMessage) {
-      await automodMessage.react(emoji.success)
+    if (!result.success) {
+      didSucceed = false
     }
+  }
+
+  if (!didSucceed) {
+    return false
   }
 
   const guild = await client.guilds.fetch(hit.guildId)
@@ -379,6 +378,8 @@ ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
         `
     }]
   })
+
+  return true
 }
 
 export default actions

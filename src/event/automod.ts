@@ -6,6 +6,7 @@ import { actionFilterHit } from '../detection/actions'
 import { executeFilterDetection } from '../detection/filter-detection'
 import { shouldIgnoreMessage } from '../utils/ignore'
 import Nilsimsa from '../vendor/nilsimsa'
+import emoji from '../utils/emoji'
 
 export async function onAutomodHit (event: AutoModerationActionExecution): Promise<void> {
   const { alertSystemMessageId, user, channel, guild } = event
@@ -74,9 +75,16 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     hexHash: new Nilsimsa(event.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, automodMessage)
+  const filterResult = await executeFilterDetection(messageToCache, guild.id)
   if (filterResult) {
-    await actionFilterHit(filterResult, member)
+    const didAction = await actionFilterHit(filterResult, member)
+
+    if (didAction) {
+      await automodMessage.react(emoji.success)
+    } else {
+      await automodMessage.react(emoji.error)
+    }
+
     return
   }
 
