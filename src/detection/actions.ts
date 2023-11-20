@@ -310,7 +310,11 @@ async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, new
   }
 }
 
-export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<boolean> {
+export interface FilterActionResult {
+  success: boolean
+}
+
+export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<FilterActionResult> {
   let didSucceed = true
 
   if (process.env.NODE_ENV === 'production') {
@@ -350,7 +354,9 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
   }
 
   if (!didSucceed) {
-    return false
+    return {
+      success: false
+    }
   }
 
   const guild = await client.guilds.fetch(hit.guildId)
@@ -379,7 +385,9 @@ ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
     }]
   })
 
-  return true
+  return {
+    success: true
+  }
 }
 
 export default actions

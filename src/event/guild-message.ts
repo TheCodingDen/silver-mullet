@@ -74,8 +74,8 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   const filterResult = await executeFilterDetection(messageToCache, message.guild.id)
   if (filterResult) {
-    const didAction = await actionFilterHit(filterResult, member)
-    if (didAction) {
+    const actionResult = await actionFilterHit(filterResult, member)
+    if (actionResult.success) {
       return
     }
 

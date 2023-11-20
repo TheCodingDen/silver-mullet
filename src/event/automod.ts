@@ -77,9 +77,9 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
 
   const filterResult = await executeFilterDetection(messageToCache, guild.id)
   if (filterResult) {
-    const didAction = await actionFilterHit(filterResult, member)
+    const actionResult = await actionFilterHit(filterResult, member)
 
-    if (didAction) {
+    if (actionResult.success) {
       await automodMessage.react(emoji.success)
     } else {
       await automodMessage.react(emoji.error)
