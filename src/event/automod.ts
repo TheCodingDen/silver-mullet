@@ -41,6 +41,26 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     return
   }
 
+  // Thank d.js for their lovely API design regarding this song and dance
+  const automodLogChannelId = event.action.metadata.channelId
+  if (!automodLogChannelId) {
+    // We check the type of the event above, so we should always get a channel ID.
+    logger.error('No automodChannelId recieved? This should be impossible')
+    return
+  }
+
+  const automodLogChannel = await guild.channels.fetch(automodLogChannelId)
+  if (!automodLogChannel) {
+    logger.error(`Automod log channel ${automodLogChannelId} was not in guild ${guild.id}?`)
+    return
+  }
+
+  if (!automodLogChannel.isTextBased()) {
+    logger.error(`Somehow automod log channel ${automodLogChannelId} was not text based?`)
+    return
+  }
+
+  const automodMessage = await automodLogChannel.messages.fetch(alertSystemMessageId)
   const member = await event.guild.members.fetch(user.id)
   if (await shouldIgnoreMessage(channel.id, channel.parentId, member)) {
     logger.debug(`Ignoring message from ${user.id} in channel ${channel.id} (parent: ${channel.parentId})`)
@@ -54,7 +74,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     hexHash: new Nilsimsa(event.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, guild.id)
+  const filterResult = await executeFilterDetection(messageToCache, automodMessage)
   if (filterResult) {
     await actionFilterHit(filterResult, member)
     return

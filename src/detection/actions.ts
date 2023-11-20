@@ -12,6 +12,7 @@ import { DetectionResult } from './spam-detection'
 import { makeDefaultEmbed, getLogChannel, getQueueChannel, makeComponents, makeQueueCallback, messageUser, handleRetryResult } from './utils'
 import { FilterDetectionResult } from './filter-detection'
 import { embedBase, messageLink } from '../utils/discordUtils'
+import emoji from '../utils/emoji'
 
 export const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
 
@@ -329,6 +330,13 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
 
     handleRetryResult(banResult, `When banning user ${member.user.username}`)
     handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
+
+    // If we were able to action, add an emoji to the automod message to indicate this
+    // Filters may be tripped from outside automod, though, so check that we actually have a message to react to.
+    const automodMessage = hit.automodMessage
+    if (banResult.success && messageResult.success && automodMessage) {
+      await automodMessage.react(emoji.success)
+    }
   } else {
     const result = await retryCallback(async () => await messageUser(member.user, {
       content: `You would have been banned from ${member.guild.name} due to spam (through filter \`/${hit.trippedFilter.regex}/\`).`
@@ -337,6 +345,13 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     })
 
     handleRetryResult(result, `When fake banning ${member.user.username}`)
+
+    // If we were able to action, add an emoji to the automod message to indicate this
+    // Filters may be tripped from outside automod, though, so check that we actually have a message to react to.
+    const automodMessage = hit.automodMessage
+    if (result.success && automodMessage) {
+      await automodMessage.react(emoji.success)
+    }
   }
 
   const guild = await client.guilds.fetch(hit.guildId)
