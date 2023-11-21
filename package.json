@@ -22,7 +22,7 @@
     "lint": "eslint . --ext .ts",
     "doc": "typedoc --out docs src",
     "deploy-migrations": "prisma migrate deploy",
-    "bootstrap": "docker compose up -d && POSTGRESQL_URI=postgres://postgres:password@127.0.0.1:5432/silver-mullet wait-for --postgresql && npm run deploy-migrations && prisma db execute --file scripts/init-local-dev-db.sql",
+    "bootstrap": "docker compose up -d --force-recreate --renew-anon-volumes && POSTGRESQL_URI=postgres://postgres:password@127.0.0.1:5432/silver-mullet wait-for -q --postgresql && npm run deploy-migrations && prisma db execute --file scripts/init-local-dev-db.sql",
     "prepare": "husky install"
   },
   "repository": {
@@ -70,6 +70,7 @@
     "husky": "^8.0.3",
     "jest": "^29.5.0",
     "lint-staged": "^13.2.2",
+    "moq.ts": "^10.0.8",
     "nodemon": "^2.0.22",
     "ts-cleaner": "^1.0.5",
     "ts-jest": "^29.1.0",

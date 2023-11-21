@@ -1,5 +1,6 @@
 import { PermissionGroup } from '@prisma/client'
 import { CommandContext, Message, MessageOptions, SlashCommand } from 'slash-create'
+import _ from 'lodash'
 import prisma from '../clients/prisma'
 import emoji from './emoji'
 
@@ -13,9 +14,12 @@ export type CommandFunction = (ctx: GuildCommandContext) => unknown
 // 1) Declaring a known key in conjunction with an index declaration (https://github.com/microsoft/TypeScript/issues/17867#issuecomment-1025104103)
 // 2) Choosing a sensible key that also cannot be an actual command name ('run' could conflict with a subcommand named the same)
 export const run = Symbol('run')
+export const allowFor = Symbol('allowFor')
+
 export interface CommandNode {
   [k: string]: CommandNode | undefined
   [run]?: CommandFunction
+  [allowFor]?: PermissionGroup[] // Additional permission groups allowed to run this command
 }
 
 export type CommandBase = Record<string, CommandNode>
@@ -32,9 +36,10 @@ export interface CommandLookupErr {
   ok: false
   err: Error
   humanReadableErr: string
+  suppressLog?: true // Only ever explicitly declared when positive
 }
 
-export type CommandLookup = CommandLookupOk | CommandLookupErr
+export type CommandLookupResult = CommandLookupOk | CommandLookupErr
 
 export enum CommandPermissionAssertionResult {
   MEMBER_UNKNOWN,
@@ -42,7 +47,12 @@ export enum CommandPermissionAssertionResult {
   NOT_ALLOWED
 }
 
-export function validateSubcommandTree ([rootKey, ...subcommands]: string[], commandTree: CommandBase): CommandLookup {
+export async function validateSubcommandTree (
+  [rootKey, ...subcommands]: string[],
+  commandTree: CommandBase,
+  rootAllowedGroups: PermissionGroup[],
+  ctx: GuildCommandContext
+): Promise<CommandLookupResult> {
   if (!commandTree[rootKey]) {
     return {
       ok: false,
@@ -77,6 +87,29 @@ export function validateSubcommandTree ([rootKey, ...subcommands]: string[], com
       err: new Error(`Attempted command execution with non-existent runner ${parts.join('.')}`),
       humanReadableErr: `The command you tried to run (\`/${parts.join(' ')}\`) is missing a runner function.`
     }
+  }
+
+  const subcommandAllowedGroups = current[allowFor] ?? []
+  const allowedGroups = _.uniq([...rootAllowedGroups, ...subcommandAllowedGroups])
+
+  const permissionAssertionResult = await assertPermissionGroupMembership(allowedGroups, ctx)
+  const commandIsMultiGroup = allowedGroups.length > 1
+
+  switch (permissionAssertionResult) {
+    case CommandPermissionAssertionResult.MEMBER_UNKNOWN:
+      return {
+        ok: false,
+        err: new Error('Member not found, unable to assert permission group membership'),
+        humanReadableErr: 'Sorry, I cannot figure out who you are to authenticate you.',
+        suppressLog: true
+      }
+    case CommandPermissionAssertionResult.NOT_ALLOWED:
+      return {
+        ok: false,
+        err: new Error('Permission group membership missing'),
+        humanReadableErr: `Sorry, you are allowed to use this command. You must belong to ${commandIsMultiGroup ? 'one of the' : 'the'} following permission ${commandIsMultiGroup ? 'groups' : 'group'}: ${allowedGroups.join(', ')}`,
+        suppressLog: true
+      }
   }
 
   return {
@@ -141,27 +174,17 @@ export async function handleCommand (
 
   const ctx = _ctx as GuildCommandContext
 
-  const permissionAssertionResult = await assertPermissionGroupMembership(allowedGroups, ctx)
-
-  switch (permissionAssertionResult) {
-    case CommandPermissionAssertionResult.MEMBER_UNKNOWN:
-      await sendFailure('Sorry, I cannot figure out who you are to authenticate you.', ctx, true)
-      return
-    case CommandPermissionAssertionResult.NOT_ALLOWED:
-      await sendFailure(
-        `Sorry, you are allowed to use this command. You must belong to the following permission ${allowedGroups.length > 1 ? 'groups' : 'group'}: ${allowedGroups.join(', ')}`,
-        ctx,
-        true
-      )
-      return
-  }
-
-  const result = validateSubcommandTree([instance.commandName, ...ctx.subcommands], {
-    [instance.commandName]: subcommandTree
-  })
+  const result = await validateSubcommandTree(
+    [instance.commandName, ...ctx.subcommands],
+    { [instance.commandName]: subcommandTree },
+    allowedGroups,
+    ctx
+  )
 
   if (!result.ok) {
-    logger.error(result.err)
+    if (!result.suppressLog) {
+      logger.error(result.err)
+    }
 
     await sendFailure(result.humanReadableErr, ctx, true)
     return
