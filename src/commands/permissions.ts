@@ -110,7 +110,7 @@ export default class ConfigCommand extends SlashCommand {
       })
       .join('\n')
 
-    await ctx.send(content, { ephemeral: true })
+    await ctx.send({ content, ephemeral: true })
   }
 
   private async assign (ctx: GuildCommandContext): Promise<void> {

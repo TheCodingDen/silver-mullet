@@ -36,7 +36,7 @@ creator.on('commandRegister', command => logger.info(`Registered command ${comma
 creator.on('commandError', (command, error) => logger.error(`Command ${command.commandName}:\n${error.stack ?? error}`))
 
 void (async () => {
-  creator
+  await creator
     .withServer(
       new GatewayServer(
         (handler) => discord.ws.on(GatewayDispatchEvents.InteractionCreate, handler)
