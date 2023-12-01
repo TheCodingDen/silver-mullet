@@ -315,7 +315,7 @@ export interface FilterActionResult {
 }
 
 export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<FilterActionResult> {
-  let didSucceed = true
+  let didSucceed = false
 
   if (process.env.NODE_ENV === 'production') {
     const [banResult, messageResult] = await Promise.all([
@@ -337,8 +337,8 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
 
     // Event if we could not message them, we still succeeded. Not our problem if the API failed or they have us blocked
-    if (!banResult.success) {
-      didSucceed = false
+    if (banResult.success) {
+      didSucceed = true
     }
   } else {
     const result = await retryCallback(async () => await messageUser(member.user, {
@@ -348,14 +348,14 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     })
 
     handleRetryResult(result, `When fake banning ${member.user.username}`)
-    if (!result.success) {
-      didSucceed = false
+    if (result.success) {
+      didSucceed = true
     }
   }
 
   if (!didSucceed) {
     return {
-      success: false
+      success: didSucceed
     }
   }
 

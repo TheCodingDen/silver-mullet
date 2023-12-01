@@ -10,7 +10,7 @@ import { executeFilterDetection } from '../detection/filter-detection'
 import { CachedMessage } from '../clients/redis'
 
 const IGNORED_TYPES: MessageType[] = [
-  // Ignore "system automod logs" because they cause confusing
+  // Ignore "system automod logs" because they cause confusing events to get sent to us
   // (Discord makes it look like the user who tripped the automod sent this log)
   MessageType.AutoModerationAction
 ]

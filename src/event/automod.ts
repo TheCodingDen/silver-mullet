@@ -46,7 +46,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
   const automodLogChannelId = event.action.metadata.channelId
   if (!automodLogChannelId) {
     // We check the type of the event above, so we should always get a channel ID.
-    logger.error('No automodChannelId recieved? This should be impossible')
+    logger.error('No AutoMod channel ID received. This should not happen')
     return
   }
 
@@ -96,7 +96,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
 
   // It's *okay* to abort here, because we already actioned a filter above
   if (!settings) {
-    logger.error('Cannot continue to caching stage of message handler without CCAS settings present')
+    logger.error('Cannot continue to caching stage of automod event handler without CCAS settings present')
     return
   }
 
