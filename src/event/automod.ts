@@ -52,12 +52,12 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
 
   const automodLogChannel = await guild.channels.fetch(automodLogChannelId)
   if (!automodLogChannel) {
-    logger.error(`Automod log channel ${automodLogChannelId} was not in guild ${guild.id}?`)
+    logger.error(`AutoMod log channel ${automodLogChannelId} was not in guild ${guild.id}`)
     return
   }
 
   if (!automodLogChannel.isTextBased()) {
-    logger.error(`Somehow automod log channel ${automodLogChannelId} was not text based?`)
+    logger.error(`AutoMod log channel ${automodLogChannelId} was not text based. This should not happen`)
     return
   }
 
