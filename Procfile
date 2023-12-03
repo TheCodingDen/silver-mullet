@@ -1,2 +1,2 @@
-release: npm run deploy-migrations && npm run sync:prod
+release: npm run deploy-migrations
 worker: node lib/index.js
