@@ -16,7 +16,7 @@ redis.on('end', () => logger.info('Redis disconnected'))
 export default redis
 
 export interface CachedMessage extends Entity {
-  messageId: string
+  eventId: string
   authorId: string
   channelId: string
   content: string

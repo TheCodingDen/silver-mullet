@@ -44,6 +44,10 @@ To further empower the system's detection capabilities, the bot supports configu
 
 Silver Mullet supports adding simple regex filters with slash commands, enabling speedy deployment of filters even from mobile clients, thus permitting rapid response to emerging spam incidents. In contrast to general-purpose systems like Zeppelin, the system is un-granular by design, featuring a dead-simple "match = ban" pattern in order to maximally shorten time to response from the staff team during an active situation.
 
+In addition to the typical "send message and filter" style, we also listen for automod events from Discord, and put the blocked content through
+the filter set. This was we get all the power and simplicity of regular filters, with the otherwise unachievable feature of blocking content before it reaches clients.
+
+
 ## Development
 
 To get started, here's a crash course:

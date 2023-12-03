@@ -310,7 +310,13 @@ async function updateQueueMessage (queuedAction: QueuedAction, guild: Guild, new
   }
 }
 
-export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<void> {
+export interface FilterActionResult {
+  success: boolean
+}
+
+export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<FilterActionResult> {
+  let didSucceed = false
+
   if (process.env.NODE_ENV === 'production') {
     const [banResult, messageResult] = await Promise.all([
       retryCallback(async () => await member.ban({
@@ -329,6 +335,11 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
 
     handleRetryResult(banResult, `When banning user ${member.user.username}`)
     handleRetryResult(messageResult, `When messaging banned user ${member.user.username}`)
+
+    // Event if we could not message them, we still succeeded. Not our problem if the API failed or they have us blocked
+    if (banResult.success) {
+      didSucceed = true
+    }
   } else {
     const result = await retryCallback(async () => await messageUser(member.user, {
       content: `You would have been banned from ${member.guild.name} due to spam (through filter \`/${hit.trippedFilter.regex}/\`).`
@@ -337,9 +348,19 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     })
 
     handleRetryResult(result, `When fake banning ${member.user.username}`)
+    if (result.success) {
+      didSucceed = true
+    }
   }
 
-  const logChannel = await getLogChannel(hit.message.guild)
+  if (!didSucceed) {
+    return {
+      success: didSucceed
+    }
+  }
+
+  const guild = await client.guilds.fetch(hit.guildId)
+  const logChannel = await getLogChannel(guild)
 
   await logChannel.send({
     embeds: [{
@@ -351,7 +372,7 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
         icon_url: member.user.displayAvatarURL()
       },
       description: `
-          **Triggered by** (${messageLink({ guildId: hit.message.guild.id, messageId: hit.message.id, channelId: hit.message.channelId })}):
+          **Triggered by** (${messageLink({ guildId: hit.guildId, messageId: hit.message.eventId, channelId: hit.message.channelId })}):
           \`\`\`
 ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\` 
@@ -363,6 +384,10 @@ ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
         `
     }]
   })
+
+  return {
+    success: true
+  }
 }
 
 export default actions

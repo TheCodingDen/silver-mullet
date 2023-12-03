@@ -122,7 +122,7 @@ export function makeDefaultEmbed (message: Message<true>, result: DetectionResul
   const averageSimilarityOfUsed = _.mean(cacheHitsToUse.map((val) => val.similarityToPostedContent))
 
   const formatCacheHit = (c: Comparison): string => {
-    const link = messageLink({ ...c.comparedContent, guildId: message.guild.id })
+    const link = messageLink({ guildId: message.guild.id, messageId: c.comparedContent.eventId, channelId: c.comparedContent.channelId })
     const content = _.truncate(c.comparedContent.content, { length: 30 }) || '<no-content>'
     const { pointsFromMatches: matches, pointsFromSimilarity: similarity } = c
 
