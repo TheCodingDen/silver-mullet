@@ -82,3 +82,15 @@ model Filter {
   regex String
   flags String @default("g")
 }
+
+enum DomainType {
+  IGNORED
+  ACTIONABLE
+}
+
+model Domain {
+  id     String         @id @default(cuid())
+  domain String         @unique
+  type   DomainType
+  action AntiSpamAction?
+}
