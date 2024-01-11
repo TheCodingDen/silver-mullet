@@ -1,5 +1,5 @@
 import { AntiSpamAction } from '@prisma/client'
-import { DiscordAPIError, Guild, GuildMember, Message, MessageEditOptions } from 'discord.js'
+import { BanOptions, DiscordAPIError, Guild, GuildMember, Message, MessageEditOptions } from 'discord.js'
 import { ComponentContext, SlashCreator } from 'slash-create'
 import { expireQueuedAction, fetchQueuedActionByAuthorId, fetchQueuedActionByMessageId, removeQueuedAction } from '../cache/op'
 import client from '../clients/discord'
@@ -17,13 +17,16 @@ export const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof Di
 
 export type ActionFunction = (member: GuildMember, message: Message<true>, result: DetectionResult) => Promise<unknown>
 
+const BAN_OPTS: BanOptions = {
+  deleteMessageSeconds: 604800, // 7 days
+  reason: 'Spam detected.'
+}
+
 const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: async (member, message, result) => {
     if (process.env.NODE_ENV === 'production') {
       const [banResult, messageResult] = await Promise.all([
-        retryCallback(async () => await member.ban({
-          reason: 'Spam detected.'
-        }), {
+        retryCallback(async () => await member.ban(BAN_OPTS), {
           attempts: 3,
           errorPredicate: ignoreFailedDeliver
         }),
@@ -319,9 +322,7 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
 
   if (process.env.NODE_ENV === 'production') {
     const [banResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.ban({
-        reason: 'Spam detected.'
-      }), {
+      retryCallback(async () => await member.ban(BAN_OPTS), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
       }),
