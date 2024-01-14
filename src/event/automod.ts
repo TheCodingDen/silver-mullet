@@ -10,7 +10,7 @@ import emoji from '../utils/emoji'
 
 export async function onAutomodHit (event: AutoModerationActionExecution): Promise<void> {
   const { alertSystemMessageId, user, channel, guild } = event
-  logger.debug(`Got automod event from @${user?.username ?? '<unknown-user>'} (${user?.id} ?? '<unknown-id>') in channel ${channel?.id ?? '<unknown-channel>'}`)
+  logger.debug(`Got automod event from ${user?.id ?? '<unknown-user>'} in channel ${channel?.id ?? '<unknown-channel>'}`)
 
   // Due to Discord not being able to structure an API to save its life, we must ignore every single event that isn't a
   // SendAlertMessage. This is because SendAlertMessage is the only event type that contains the alertSystemMessageId, which we require.
@@ -29,7 +29,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
   }
 
   if (!user || !channel) {
-    logger.error(`Cannot action AutoMod event, the event is missing critical details (user: @${user?.username ?? '<unknown-user>'}, channel: ${channel?.id ?? '<unknown-channel>'})`)
+    logger.error(`Cannot action AutoMod event, the event is missing critical details (user: ${user?.id ?? '<unknown-user>'}, channel: ${channel?.id ?? '<unknown-channel>'})`)
     return
   }
 
@@ -78,6 +78,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
 
   const filterResult = await executeFilterDetection(messageToCache, guild.id)
   if (filterResult) {
+    logger.debug(`User ${user.id} hit filter ${JSON.stringify(filterResult, undefined, 2)}`)
     const actionResult = await actionFilterHit(filterResult, member)
 
     if (actionResult.success) {
