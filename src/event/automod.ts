@@ -10,7 +10,7 @@ import emoji from '../utils/emoji'
 
 export async function onAutomodHit (event: AutoModerationActionExecution): Promise<void> {
   const { alertSystemMessageId, user, channel, guild } = event
-  logger.debug(`Got automod event from @${user?.username ?? '<unknown-user>'} in channel ${channel?.id ?? '<unknown-channel>'}`)
+  logger.debug(`Got automod event from @${user?.username ?? '<unknown-user>'} (${user?.id} ?? '<unknown-id>') in channel ${channel?.id ?? '<unknown-channel>'}`)
 
   // Due to Discord not being able to structure an API to save its life, we must ignore every single event that isn't a
   // SendAlertMessage. This is because SendAlertMessage is the only event type that contains the alertSystemMessageId, which we require.
@@ -69,6 +69,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
 
   const messageToCache: CachedMessage = {
     eventId: alertSystemMessageId,
+    guildID: guild.id,
     authorId: user.id,
     channelId: channel.id,
     content: event.content,

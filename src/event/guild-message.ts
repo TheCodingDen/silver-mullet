@@ -66,6 +66,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   const messageToCache: CachedMessage = {
     eventId: message.id,
+    guildID: message.guild.id,
     authorId: message.author.id,
     channelId: message.channel.id,
     content: message.content,
@@ -97,7 +98,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   // Fetch author messages from Redis cache
   logger.debug(`Fetching messages from author "${message.author.id}"`)
-  const authorMessagesResult = await retryCallback(async () => await fetchMessagesByAuthor(message.author.id), {
+  const authorMessagesResult = await retryCallback(async () => await fetchMessagesByAuthor(message.author.id, message.guildId), {
     attempts: 3
   })
 
@@ -114,7 +115,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
 
   logger.debug('Entering anti spam detection')
 
-  const antiSpamResult = await executeAntiSpamDetection(messageToCache, authorMessages)
+  const antiSpamResult = await executeAntiSpamDetection(messageToCache, message.guildId, authorMessages)
   const { action, averageSimilarity, comparisons } = antiSpamResult
 
   const content = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : message.content.substring(0, 10)

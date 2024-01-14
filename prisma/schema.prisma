@@ -38,7 +38,8 @@ model PermissionGroupMapping {
 }
 
 model CrossChannelAntiSpamSettings {
-  version                         Int @id @default(autoincrement())
+  version                         Int    @id @default(autoincrement())
+  guildID                         String
   minMessageLength                Int
   shortMessageLength              Int
   shortMessageSimilarityThreshold Int
@@ -78,7 +79,8 @@ model PointOverride {
 }
 
 model Filter {
-  id    String @id @default(cuid())
-  regex String
-  flags String @default("g")
+  id      String @id @default(cuid())
+  guildID String
+  regex   String
+  flags   String @default("g")
 }

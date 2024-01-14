@@ -154,6 +154,7 @@ export default class FilterCommand extends SlashCommand {
       const { flags: newFlags } = await prisma.filter.create({
         data: {
           regex: regex.source,
+          guildID: ctx.guildID,
           flags
         }
       })
