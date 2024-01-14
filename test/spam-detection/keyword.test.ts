@@ -5,6 +5,7 @@ import { newMessage } from './util'
 describe('Keyword detection', () => {
   const heavyContent = newMessage('KEYWORD content content')
   const lightContent = newMessage('LIGHTWORD content content')
+  const guildID = '731581715474153542'
 
   beforeAll(async () => {
     await prisma.$connect()
@@ -20,6 +21,7 @@ describe('Keyword detection', () => {
 
     await prisma.crossChannelAntiSpamSettings.upsert({
       create: {
+        guildID,
         version: 1,
         maxSizeDiffPercentage: 30,
         cacheTTLSeconds: 3,
@@ -51,6 +53,7 @@ describe('Keyword detection', () => {
       },
       update: {
         version: 1,
+        guildID,
         maxSizeDiffPercentage: 30,
         cacheTTLSeconds: 3,
         minMessageLength: 10,
@@ -86,10 +89,10 @@ describe('Keyword detection', () => {
   })
 
   it('detects a single heavily weighted keyword as spam', async () => {
-    expect(await executeAntiSpamDetection(heavyContent, [heavyContent])).toMatchSnapshot()
+    expect(await executeAntiSpamDetection(heavyContent, guildID, [heavyContent])).toMatchSnapshot()
   })
 
   it('detects several lightly weighted keywords as spam', async () => {
-    expect(await executeAntiSpamDetection(lightContent, [lightContent, lightContent, lightContent, lightContent, lightContent])).toMatchSnapshot()
+    expect(await executeAntiSpamDetection(lightContent, guildID, [lightContent, lightContent, lightContent, lightContent, lightContent])).toMatchSnapshot()
   })
 })
