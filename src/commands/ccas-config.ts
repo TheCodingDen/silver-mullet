@@ -309,9 +309,9 @@ export default class CCASConfigCommand extends SlashCommand {
 
     try {
       await prisma.crossChannelAntiSpamSettings.update({
+        // We don't need to provide the guild ID here. Versions are unique.
         where: {
-          version: settings.version,
-          guildID: ctx.guildID
+          version: settings.version
         },
         data: {
           [setting]: value
