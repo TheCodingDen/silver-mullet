@@ -17,8 +17,8 @@ export async function executeFilterDetection (message: CachedMessage, guildId: s
   })
 
   if (!filters.length) {
-    logger.debug(`No filters found for guilod ${guildId}`)
-    return undefined
+    logger.debug(`No filters found for guild ${guildId}`)
+    return
   }
 
   const content = decancer(message.content).toString()
