@@ -22,9 +22,10 @@ export async function fetchMessageById (messageId: string): Promise<CachedMessag
   return await messageRepository.fetch(messageId) as CachedMessage
 }
 
-export async function fetchMessagesByAuthor (authorId: string): Promise<CachedMessage[]> {
+export async function fetchMessagesByAuthor (authorId: string, guildId: string): Promise<CachedMessage[]> {
   return (await messageRepository.search()
     .where('authorId').equals(authorId)
+    .where('guildId').equals(guildId)
     .return.all()) as CachedMessage[]
 }
 

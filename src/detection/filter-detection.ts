@@ -10,7 +10,17 @@ export interface FilterDetectionResult {
 }
 
 export async function executeFilterDetection (message: CachedMessage, guildId: string): Promise<FilterDetectionResult | undefined> {
-  const filters = await prisma.filter.findMany({})
+  const filters = await prisma.filter.findMany({
+    where: {
+      guildID: guildId
+    }
+  })
+
+  if (!filters.length) {
+    logger.debug(`No filters found for guild ${guildId}`)
+    return
+  }
+
   const content = decancer(message.content).toString()
 
   const matchedFilter = filters.find(f => {

@@ -18,6 +18,7 @@ export default redis
 export interface CachedMessage extends Entity {
   eventId: string
   authorId: string
+  guildID: string
   channelId: string
   content: string
   hexHash: string
@@ -27,6 +28,7 @@ export enum ActionUpgrade {
   BAN = 'ban',
   KICK = 'kick'
 }
+
 export interface QueuedAction extends Entity {
   authorId: string
   queueMessageId: string
@@ -40,6 +42,7 @@ export const messageSchema = new Schema('message', {
   messageId: { type: 'string' },
   authorId: { type: 'string' },
   channelId: { type: 'string' },
+  guildID: { type: 'string' },
   content: { type: 'text' },
   hexHash: { type: 'string' }
 })

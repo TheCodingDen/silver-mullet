@@ -5,6 +5,7 @@ import { newMessage } from './util'
 describe('Quantity spam', () => {
   const content = newMessage('content--1')
   const similarContent = newMessage('content--2')
+  const guildID = '731581715474153542'
 
   beforeAll(async () => {
     await prisma.$connect()
@@ -21,6 +22,7 @@ describe('Quantity spam', () => {
     await prisma.crossChannelAntiSpamSettings.upsert({
       create: {
         version: 1,
+        guildID,
         maxSizeDiffPercentage: 30,
         cacheTTLSeconds: 3,
         minMessageLength: 10,
@@ -37,6 +39,7 @@ describe('Quantity spam', () => {
       },
       update: {
         version: 1,
+        guildID,
         maxSizeDiffPercentage: 30,
         cacheTTLSeconds: 3,
         minMessageLength: 10,
@@ -58,18 +61,18 @@ describe('Quantity spam', () => {
   })
 
   it('does not detect a single message as spam', async () => {
-    expect(await executeAntiSpamDetection(content, [])).toMatchSnapshot()
+    expect(await executeAntiSpamDetection(content, guildID, [])).toMatchSnapshot()
   })
 
   it('detects a series of identical messages as spam', async () => {
-    expect(await executeAntiSpamDetection(content, [content, content, content, content, content])).toMatchSnapshot()
+    expect(await executeAntiSpamDetection(content, guildID, [content, content, content, content, content])).toMatchSnapshot()
   })
 
   it('detects a series of similar messages as spam', async () => {
-    expect(await executeAntiSpamDetection(content, [similarContent, similarContent, similarContent, similarContent, similarContent])).toMatchSnapshot()
+    expect(await executeAntiSpamDetection(content, guildID, [similarContent, similarContent, similarContent, similarContent, similarContent])).toMatchSnapshot()
   })
 
   it('detects a mix of similar and identical messages as spam', async () => {
-    expect(await executeAntiSpamDetection(content, [similarContent, content, similarContent, content, similarContent])).toMatchSnapshot()
+    expect(await executeAntiSpamDetection(content, guildID, [similarContent, content, similarContent, content, similarContent])).toMatchSnapshot()
   })
 })

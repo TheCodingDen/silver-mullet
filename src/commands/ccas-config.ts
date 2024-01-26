@@ -167,6 +167,9 @@ export default class CCASConfigCommand extends SlashCommand {
         const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
           orderBy: {
             version: 'desc'
+          },
+          where: {
+            guildID: ctx.guildID
           }
         })
 
@@ -216,6 +219,9 @@ export default class CCASConfigCommand extends SlashCommand {
       include: {
         pointOverrides: true,
         actionMappings: true
+      },
+      where: {
+        guildID: ctx.guildID
       },
       orderBy: {
         version: 'desc'
@@ -280,6 +286,9 @@ export default class CCASConfigCommand extends SlashCommand {
     const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
       orderBy: {
         version: 'desc'
+      },
+      where: {
+        guildID: ctx.guildID
       }
     })
 
@@ -300,6 +309,7 @@ export default class CCASConfigCommand extends SlashCommand {
 
     try {
       await prisma.crossChannelAntiSpamSettings.update({
+        // We don't need to provide the guild ID here. Versions are unique.
         where: {
           version: settings.version
         },
@@ -329,6 +339,9 @@ export default class CCASConfigCommand extends SlashCommand {
       const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
         orderBy: {
           version: 'desc'
+        },
+        where: {
+          guildID: ctx.guildID
         }
       })
 
@@ -364,6 +377,9 @@ export default class CCASConfigCommand extends SlashCommand {
     const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
       orderBy: {
         version: 'desc'
+      },
+      where: {
+        guildID: ctx.guildID
       }
     })
 
@@ -411,6 +427,9 @@ export default class CCASConfigCommand extends SlashCommand {
       const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
         orderBy: {
           version: 'desc'
+        },
+        where: {
+          guildID: ctx.guildID
         }
       })
 
@@ -446,6 +465,9 @@ export default class CCASConfigCommand extends SlashCommand {
     const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
       orderBy: {
         version: 'desc'
+      },
+      where: {
+        guildID: ctx.guildID
       }
     })
 

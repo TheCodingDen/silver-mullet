@@ -60,14 +60,19 @@ export interface Comparison {
  *
  * The returned action is based on the points scored by the user against the point threshold
  * @param postedContent - The posted content to check against
+ * @param guildID - The guild from which this detection run was started from
  * @param cachedMessages - The authors post history
  * @returns The result of the detection
  */
 export async function executeAntiSpamDetection (
   postedContent: CachedMessage,
+  guildID: string,
   cachedMessages: CachedMessage[]
 ): Promise<DetectionResult> {
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
+    where: {
+      guildID
+    },
     orderBy: {
       version: 'desc'
     },
@@ -77,6 +82,8 @@ export async function executeAntiSpamDetection (
     }
   })
 
+  // NOTE: Even if we're going across guilds, there should be a CCAS config setup.
+  //       If there isn't, that means our test guild setup is wrong.
   if (settings === null) {
     throw new Error('cannot compute anti spam results without settings present in the database')
   }
