@@ -42,7 +42,7 @@ export const messageSchema = new Schema('message', {
   messageId: { type: 'string' },
   authorId: { type: 'string' },
   channelId: { type: 'string' },
-  guildID: { type: 'string' },
+  guildId: { type: 'string' },
   content: { type: 'text' },
   hexHash: { type: 'string' }
 })
