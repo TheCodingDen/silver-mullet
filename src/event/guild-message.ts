@@ -65,8 +65,8 @@ export async function onGuildMessage (message: Message): Promise<void> {
   }
 
   const messageToCache: CachedMessage = {
-    eventId: message.id,
-    guildID: message.guild.id,
+    messageId: message.id,
+    guildId: message.guild.id,
     authorId: message.author.id,
     channelId: message.channel.id,
     content: message.content,

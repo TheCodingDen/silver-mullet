@@ -68,8 +68,8 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
   }
 
   const messageToCache: CachedMessage = {
-    eventId: alertSystemMessageId,
-    guildID: guild.id,
+    messageId: alertSystemMessageId,
+    guildId: guild.id,
     authorId: user.id,
     channelId: channel.id,
     content: event.content,

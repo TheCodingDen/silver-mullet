@@ -373,7 +373,7 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
         icon_url: member.user.displayAvatarURL()
       },
       description: `
-          **Triggered by** (${messageLink({ guildId: hit.guildId, messageId: hit.message.eventId, channelId: hit.message.channelId })}):
+          **Triggered by** (${messageLink({ guildId: hit.guildId, messageId: hit.message.messageId, channelId: hit.message.channelId })}):
           \`\`\`
 ${hit.message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\` 
