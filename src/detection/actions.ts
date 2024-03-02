@@ -31,7 +31,8 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
           errorPredicate: ignoreFailedDeliver
         }),
         retryCallback(async () => await messageUser(member.user, {
-          content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.
+If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
         }), {
           attempts: 3,
           errorPredicate: ignoreFailedDeliver
@@ -82,7 +83,8 @@ const actions: Record<AntiSpamAction, ActionFunction> = {
           errorPredicate: ignoreFailedDeliver
         }),
         retryCallback(async () => await messageUser(member.user, {
-          content: `You have been kicked from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.`
+          content: `You have been kicked from ${member.guild.name} due to spam.
+If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
         }), {
           attempts: 3,
           errorPredicate: ignoreFailedDeliver
