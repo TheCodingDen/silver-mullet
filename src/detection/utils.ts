@@ -155,7 +155,7 @@ export function makeDefaultEmbed (message: Message<true>, result: DetectionResul
     title: 'Spam detected',
     color: color.red,
     author: {
-      name: `@${message.author.username}`,
+      name: `@${message.author.username} (${message.author.id})`,
       icon_url: message.author.displayAvatarURL()
     },
     description: `
