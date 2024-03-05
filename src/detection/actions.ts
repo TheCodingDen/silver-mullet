@@ -371,7 +371,7 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
       title: 'Filter triggered',
       color: color.red,
       author: {
-        name: `@${member.user.username}`,
+        name: `@${member.user.username} (${member.id})`,
         icon_url: member.user.displayAvatarURL()
       },
       description: `
