@@ -2,14 +2,7 @@ import { CrossChannelAntiSpamSettings } from '@prisma/client'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
-
-export enum DetectionAction {
-  BAN = 'BAN',
-  KICK = 'KICK',
-  QUEUE_BAN = 'QUEUE_BAN',
-  QUEUE_KICK = 'QUEUE_KICK',
-  NOTHING = 'NOTHING',
-}
+import { DetectionResult } from '../actions'
 
 export type MatchWeights = Record<string, number>
 
@@ -26,17 +19,6 @@ export interface PointMatchResult {
 export interface SimilarityMatchResult {
   pointsGained: number
   thresholdBroken: number
-}
-
-/**
- * The result of a spam cache search for a users messages, advises
- * what action to take based on the the comparisons done
- */
-export interface DetectionResult {
-  action: DetectionAction
-  averageSimilarity: number
-  totalPoints: number
-  comparisons: Comparison[]
 }
 
 /**
@@ -68,7 +50,7 @@ export async function executeAntiSpamDetection (
   postedContent: CachedMessage,
   guildID: string,
   cachedMessages: CachedMessage[]
-): Promise<DetectionResult> {
+): Promise<DetectionResult | undefined> {
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     where: {
       guildID
@@ -91,12 +73,7 @@ export async function executeAntiSpamDetection (
   const { pointOverrides, actionMappings, maxSizeDiffPercentage, minMessageLength } = settings
 
   if (postedContent.content.length < minMessageLength) {
-    return {
-      action: DetectionAction.NOTHING,
-      averageSimilarity: 0,
-      totalPoints: 0,
-      comparisons: []
-    }
+    return undefined
   }
 
   const weights = pointOverrides.reduce<MatchWeights>((acc, val) => {
@@ -148,9 +125,14 @@ export async function executeAntiSpamDetection (
 
   const points = pointResults.reduce((acc, val) => acc + val, 0)
   const actions = actionMappings.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
-  const chosenAction = DetectionAction[actions[0]?.action] ?? DetectionAction.NOTHING
+  const chosenAction = actions[0]?.action
+
+  if (chosenAction === undefined) {
+    return undefined
+  }
 
   return {
+    source: 'spam',
     action: chosenAction,
     averageSimilarity: computeAverageSimilarity(comparisons),
     totalPoints: points,

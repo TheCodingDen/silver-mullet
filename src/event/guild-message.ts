@@ -1,7 +1,7 @@
 import { Message, MessageType } from 'discord.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import prisma from '../clients/prisma'
-import actions, { actionFilterHit } from '../detection/actions'
+import { actionFilterHit, actions } from '../actions/'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
 import { errStack } from '../utils/index'
 import Nilsimsa from '../vendor/nilsimsa'
@@ -73,7 +73,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, message.guild.id)
+  const filterResult = await executeFilterDetection(messageToCache, message.guild)
   if (filterResult) {
     const actionResult = await actionFilterHit(filterResult, member)
     if (actionResult.success) {
@@ -116,6 +116,15 @@ export async function onGuildMessage (message: Message): Promise<void> {
   logger.debug('Entering anti spam detection')
 
   const antiSpamResult = await executeAntiSpamDetection(messageToCache, message.guildId, authorMessages)
+  if (antiSpamResult === undefined) {
+    logger.debug('No spam detected.')
+    return
+  }
+
+  if (antiSpamResult.source !== 'spam') {
+    throw new Error('filter source returned from antispam detection')
+  }
+
   const { action, averageSimilarity, comparisons } = antiSpamResult
 
   const content = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : message.content.substring(0, 10)
@@ -131,40 +140,42 @@ export async function onGuildMessage (message: Message): Promise<void> {
     )
   }
 
-  if (action !== 'NOTHING') {
-    const actionFn = actions[action]
+  const actionFn = actions[action]
+  const runningAction = actionPromises.get(member.id)
 
-    const runningAction = actionPromises.get(member.id)
-
-    // Run this as late as possible before executing the new action, so that we do not miss it
-    if (runningAction) {
-      try {
-        logger.debug(`Waiting for already executing action to complete on user ${member.id}`)
-        await runningAction
-        logger.debug(`Executing existing action completed on user ${member.id}, proceding with next action`)
-      } catch (err) {
-        // Log, but proceed with our event
-        logger.error(`Error whilst waiting for already executing action on user ${member.id}\n${errStack(err)}`)
-      }
+  // Run this as late as possible before executing the new action, so that we do not miss it
+  if (runningAction) {
+    try {
+      logger.debug(`Waiting for already executing action to complete on user ${member.id}`)
+      await runningAction
+      logger.debug(`Executing existing action completed on user ${member.id}, proceding with next action`)
+    } catch (err) {
+      // Log, but proceed with our event
+      logger.error(`Error whilst waiting for already executing action on user ${member.id}\n${errStack(err)}`)
     }
-
-    let actionComplete = false
-    let tries = 3
-
-    while (!actionComplete && tries !== 0) {
-      try {
-        const promise = actionFn(member, message, antiSpamResult)
-        actionPromises.set(member.id, promise)
-        await promise
-        actionComplete = true
-        actionPromises.delete(member.id)
-      } catch (err) {
-        logger.warn(`Failed to ${action} member (${tries} tries left):\n${err}`)
-      }
-
-      tries--
-    }
-
-    logger.debug('Anti spam finished')
   }
+
+  let actionComplete = false
+  let tries = 3
+
+  while (!actionComplete && tries !== 0) {
+    try {
+      const promise = actionFn(member, {
+        author: member,
+        content,
+        guild: message.guild,
+        channel: message.channel
+      }, antiSpamResult)
+      actionPromises.set(member.id, promise)
+      await promise
+      actionComplete = true
+      actionPromises.delete(member.id)
+    } catch (err) {
+      logger.warn(`Failed to ${action} member (${tries} tries left):\n${err}`)
+    }
+
+    tries--
+  }
+
+  logger.debug('Anti spam finished')
 }

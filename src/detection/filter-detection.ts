@@ -1,23 +1,18 @@
-import { Filter } from '@prisma/client'
 import prisma from '../clients/prisma'
 import decancer from 'decancer'
 import { CachedMessage } from '../clients/redis'
+import { Guild } from 'discord.js'
+import { FilterDetectionResult } from '../actions'
 
-export interface FilterDetectionResult {
-  trippedFilter: Filter
-  message: CachedMessage
-  guildId: string
-}
-
-export async function executeFilterDetection (message: CachedMessage, guildId: string): Promise<FilterDetectionResult | undefined> {
+export async function executeFilterDetection (message: CachedMessage, guild: Guild): Promise<FilterDetectionResult | undefined> {
   const filters = await prisma.filter.findMany({
     where: {
-      guildID: guildId
+      guildID: guild.id
     }
   })
 
   if (!filters.length) {
-    logger.debug(`No filters found for guild ${guildId}`)
+    logger.debug(`No filters found for guild ${guild.id}`)
     return
   }
 
@@ -29,10 +24,14 @@ export async function executeFilterDetection (message: CachedMessage, guildId: s
   })
 
   if (matchedFilter) {
+    const author = await guild.members.fetch(message.authorId)
     return {
+      source: 'filter',
+      action: matchedFilter.action,
       trippedFilter: matchedFilter,
       message,
-      guildId
+      guild,
+      author
     }
   }
 }

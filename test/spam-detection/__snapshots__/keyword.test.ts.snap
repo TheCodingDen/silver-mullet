@@ -36,6 +36,7 @@ exports[`Keyword detection detects a single heavily weighted keyword as spam 1`]
       "similarityToPostedContent": 128,
     },
   ],
+  "source": "spam",
   "totalPoints": 5,
 }
 `;
@@ -196,6 +197,7 @@ exports[`Keyword detection detects several lightly weighted keywords as spam 1`]
       "similarityToPostedContent": 128,
     },
   ],
+  "source": "spam",
   "totalPoints": 5,
 }
 `;
