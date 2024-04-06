@@ -3,19 +3,18 @@ import { ActionUpgrade } from '../clients/redis'
 import { getLogChannel, makeDefaultEmbed, handleRetryResult, makeComponents, messageUser } from '../detection/utils'
 import color from '../utils/color'
 import { retryCallback } from '../utils/retry'
-import { ActionFunction, ignoreFailedDeliver } from './'
+import { ActionFunction, EJECTIONS, ignoreFailedDeliver } from './'
 import { updateQueueMessage } from './utils'
 
 export const kick: ActionFunction = async (member, message, result) => {
   if (process.env.NODE_ENV === 'production') {
     const [kickResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.kick('Spam detected.'), {
+      retryCallback(async () => await member.kick(EJECTIONS.kick.opts), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
       }),
       retryCallback(async () => await messageUser(member.user, {
-        content: `You have been kicked from ${member.guild.name} due to spam.
-If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
+        content: EJECTIONS.kick.message(member.guild)
       }), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver

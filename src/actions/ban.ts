@@ -3,21 +3,20 @@ import { ActionUpgrade } from '../clients/redis'
 import { getLogChannel, makeDefaultEmbed, handleRetryResult, makeComponents, messageUser } from '../detection/utils'
 import color from '../utils/color'
 import { retryCallback } from '../utils/retry'
-import { ActionFunction, BAN_OPTS, ignoreFailedDeliver } from './'
+import { ActionFunction, EJECTIONS, ignoreFailedDeliver } from './'
 import { updateQueueMessage } from './utils'
 
 export const ban: ActionFunction = async (member, message, result) => {
   if (process.env.NODE_ENV === 'production') {
     const [banResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.ban(BAN_OPTS), {
+      retryCallback(async () => await member.ban(EJECTIONS.ban.opts), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
       }),
       retryCallback(
         async () =>
           await messageUser(member.user, {
-            content: `You have been banned from ${member.guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.
-If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
+            content: EJECTIONS.ban.message(message.guild)
           }),
         {
           attempts: 3,
