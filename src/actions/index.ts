@@ -45,7 +45,8 @@ If you are not aware of what may have caused this, your account is likely compro
 If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   },
   mute: {
-    opts: [5 * 60, 'Spam detected.'] as const,
+    // Timeout in millis. 5 minutes.
+    opts: [5 * 1000 * 60, 'Spam detected.'] as const,
     message: (guild: Guild) =>
 `You have been muted in ${guild.name} due to spam. If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   }
