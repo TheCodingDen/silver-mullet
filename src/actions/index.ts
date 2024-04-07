@@ -8,8 +8,10 @@ import { DetectionResult } from '../detection/types'
 export const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: ban,
   KICK: kick,
+  MUTE: mute,
   QUEUE_BAN: queueBan,
-  QUEUE_KICK: queueKick
+  QUEUE_KICK: queueKick,
+  QUEUE_MUTE: queueMute
 }
 
 export { actionFilterHit } from './filter'
@@ -41,5 +43,10 @@ If you are not aware of what may have caused this, your account is likely compro
     message: (guild: Guild) =>
 `You have been kicked from ${guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.
 If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
+  },
+  mute: {
+    opts: [5 * 60, 'Spam detected.'] as const,
+    message: (guild: Guild) =>
+`You have been muted in ${guild.name} due to spam. If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   }
 }
