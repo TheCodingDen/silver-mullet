@@ -2,7 +2,7 @@ import { CrossChannelAntiSpamSettings } from '@prisma/client'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
-import { DetectionResult } from '../actions'
+import { SpamDetectionResult } from '../actions'
 
 export type MatchWeights = Record<string, number>
 
@@ -50,7 +50,7 @@ export async function executeAntiSpamDetection (
   postedContent: CachedMessage,
   guildID: string,
   cachedMessages: CachedMessage[]
-): Promise<DetectionResult | undefined> {
+): Promise<SpamDetectionResult | undefined> {
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     where: {
       guildID

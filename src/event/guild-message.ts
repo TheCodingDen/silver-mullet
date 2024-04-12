@@ -121,10 +121,6 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
-  if (antiSpamResult.source !== 'spam') {
-    throw new Error('filter source returned from antispam detection')
-  }
-
   const { action, averageSimilarity, comparisons } = antiSpamResult
 
   const content = process.env.NODE_ENV === 'production' ? '<content ommited in production>' : message.content.substring(0, 10)

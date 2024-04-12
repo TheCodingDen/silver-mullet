@@ -3,20 +3,20 @@ import { ActionUpgrade } from '../clients/redis'
 import { getLogChannel, makeDefaultEmbed, handleRetryResult, makeComponents, messageUser } from '../detection/utils'
 import color from '../utils/color'
 import { retryCallback } from '../utils/retry'
-import { ActionFunction, EJECTIONS, ignoreFailedDeliver } from './'
+import { ActionFunction, REMOVAL_OPTIONS, ignoreFailedDeliver } from './'
 import { updateQueueMessage } from './utils'
 
 export const ban: ActionFunction = async (member, message, result) => {
   if (process.env.NODE_ENV === 'production') {
     const [banResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.ban(EJECTIONS.ban.opts), {
+      retryCallback(async () => await member.ban(REMOVAL_OPTIONS.ban.opts), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
       }),
       retryCallback(
         async () =>
           await messageUser(member.user, {
-            content: EJECTIONS.ban.message(message.guild)
+            content: REMOVAL_OPTIONS.ban.message(message.guild)
           }),
         {
           attempts: 3,

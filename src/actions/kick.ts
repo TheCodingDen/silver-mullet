@@ -3,18 +3,18 @@ import { ActionUpgrade } from '../clients/redis'
 import { getLogChannel, makeDefaultEmbed, handleRetryResult, makeComponents, messageUser } from '../detection/utils'
 import color from '../utils/color'
 import { retryCallback } from '../utils/retry'
-import { ActionFunction, EJECTIONS, ignoreFailedDeliver } from './'
+import { ActionFunction, REMOVAL_OPTIONS, ignoreFailedDeliver } from './'
 import { updateQueueMessage } from './utils'
 
 export const kick: ActionFunction = async (member, message, result) => {
   if (process.env.NODE_ENV === 'production') {
     const [kickResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.kick(EJECTIONS.kick.opts), {
+      retryCallback(async () => await member.kick(REMOVAL_OPTIONS.kick.opts), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
       }),
       retryCallback(async () => await messageUser(member.user, {
-        content: EJECTIONS.kick.message(member.guild)
+        content: REMOVAL_OPTIONS.kick.message(member.guild)
       }), {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
