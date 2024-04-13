@@ -43,8 +43,6 @@ export enum ActionUpgrade {
 interface QueuedActionBase {
   authorId: string
   queueMessageId: string
-  originalMessageId: string
-  originalChannelId: string
   createdAt: number
   upgradeTo: ActionUpgrade
 }
@@ -91,8 +89,6 @@ export const queuedActionSchema = new Schema(
   validateSchema<QueuedActionBase>({
     authorId: { type: 'string' },
     queueMessageId: { type: 'string' },
-    originalMessageId: { type: 'string' },
-    originalChannelId: { type: 'string' },
     upgradeTo: { type: 'text' },
     createdAt: { type: 'number', sortable: true }
   })

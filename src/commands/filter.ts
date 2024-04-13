@@ -1,4 +1,4 @@
-import { PermissionGroup } from '@prisma/client'
+import { AntiSpamAction, PermissionGroup } from '@prisma/client'
 import {
   SlashCommand,
   SlashCreator,
@@ -19,6 +19,7 @@ import {
   sendSuccess
 } from '../utils/commands'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
+import _ from 'lodash'
 
 export default class FilterCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
@@ -41,6 +42,13 @@ export default class FilterCommand extends SlashCommand {
               type: CommandOptionType.STRING,
               name: 'regex',
               description: 'The regex to trigger with. Supplied as-is, without / / syntax.',
+              required: true
+            },
+            {
+              type: CommandOptionType.STRING,
+              name: 'action',
+              description: 'The action to perform.',
+              choices: _.keys(AntiSpamAction).map(action => ({ name: action, value: action })),
               required: true
             },
             {
@@ -123,7 +131,7 @@ export default class FilterCommand extends SlashCommand {
       await ctx.send('No filters have been set.')
     } else {
       const content = allFilters
-        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags})`)
+        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}`)
         .join('\n') || 'No filters set.'
 
       await ctx.send(content)
@@ -132,8 +140,9 @@ export default class FilterCommand extends SlashCommand {
 
   private async add (ctx: GuildCommandContext): Promise<void> {
     const { options } = ctx
-    let { regex: rawRegex, flags } = options.add as {
+    let { regex: rawRegex, flags, action } = options.add as {
       regex: string
+      action: AntiSpamAction
       flags: string
     }
 
@@ -155,12 +164,13 @@ export default class FilterCommand extends SlashCommand {
         data: {
           regex: regex.source,
           guildID: ctx.guildID,
-          flags
+          flags,
+          action
         }
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex.source}/${newFlags}`
+        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit`
       )
       await sendSuccess(
         `Added filter \`/${regex.source}/${newFlags}\`.`,

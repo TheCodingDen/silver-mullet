@@ -4,10 +4,11 @@ import { addQueuedAction, fetchQueuedActionByAuthorId } from '../cache/op'
 import { ActionUpgrade } from '../clients/redis'
 import { errStack } from '../utils'
 import color from '../utils/color'
-import { embedBase, messageLink } from '../utils/discordUtils'
+import { channelLink, embedBase } from '../utils/discordUtils'
 import { RetryResult } from '../utils/retry'
-import { ActionFunction } from './actions'
-import { Comparison, DetectionResult } from './spam-detection'
+import { ActionFunction, TriggeringMessage } from '../actions'
+import { Comparison } from './spam-detection'
+import { DetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
@@ -106,15 +107,13 @@ export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
     await addQueuedAction({
       authorId: member.id,
       queueMessageId: queueMessage.id,
-      originalMessageId: message.id,
-      originalChannelId: message.channel.id,
       upgradeTo: action,
       createdAt: Date.now()
     })
   }
 }
 
-export function makeDefaultEmbed (message: Message<true>, result: DetectionResult): APIEmbed {
+function makeSpamDefaultEmbed (message: TriggeringMessage, result: SpamDetectionResult): APIEmbed {
   const { action, comparisons, totalPoints } = result
 
   // Use the (up to) 10 most similar matches, with most similar ranked first
@@ -122,7 +121,7 @@ export function makeDefaultEmbed (message: Message<true>, result: DetectionResul
   const averageSimilarityOfUsed = _.mean(cacheHitsToUse.map((val) => val.similarityToPostedContent))
 
   const formatCacheHit = (c: Comparison): string => {
-    const link = messageLink({ guildId: message.guild.id, messageId: c.comparedContent.messageId, channelId: c.comparedContent.channelId })
+    const link = channelLink(c.comparedContent.channelId)
     const content = _.truncate(c.comparedContent.content, { length: 30 }) || '<no-content>'
     const { pointsFromMatches: matches, pointsFromSimilarity: similarity } = c
 
@@ -155,16 +154,16 @@ export function makeDefaultEmbed (message: Message<true>, result: DetectionResul
     title: 'Spam detected',
     color: color.red,
     author: {
-      name: `@${message.author.username} (${message.author.id})`,
+      name: `@${message.author.user.username} (${message.author.id})`,
       icon_url: message.author.displayAvatarURL()
     },
     description: `
-          **Triggered by** (${messageLink({ guildId: message.guild.id, messageId: message.id, channelId: message.channel.id })}):
+          **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`
 ${message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\` 
           **Action taken**:
-          ${action}
+          \`${action}\`
           ${cacheHitsToUse.length
             ? (`
               **Other messages (${cacheHitsToUse.length})**:
@@ -176,6 +175,38 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
             : ''
           }
         `
+  }
+}
+
+function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetectionResult): APIEmbed {
+  const { action, trippedFilter } = result
+  return {
+    ...embedBase(),
+    title: 'Filter triggered',
+    color: color.red,
+    author: {
+      name: `@${message.author.user.username} (${message.author.id})`,
+      icon_url: message.author.displayAvatarURL()
+    },
+    description: `
+          **Triggered in** (${channelLink(message.channel.id)}):
+          \`\`\`
+${message.content.trimStart().trimEnd() || '<no-content>'}
+          \`\`\` 
+          **Action taken**:
+          \`${action}\`
+
+          **Filter**:
+          \`/${trippedFilter.regex}/${trippedFilter.flags}\`
+        `
+  }
+}
+
+export function makeDefaultEmbed (message: TriggeringMessage, result: DetectionResult): APIEmbed {
+  if (result.source === DetectionSource.SPAM) {
+    return makeSpamDefaultEmbed(message, result)
+  } else {
+    return makeFilterDefaultEmbed(message, result)
   }
 }
 

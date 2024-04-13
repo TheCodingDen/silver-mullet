@@ -82,5 +82,6 @@ model Filter {
   id      String @id @default(cuid())
   guildID String
   regex   String
+  action  AntiSpamAction @default(BAN)
   flags   String @default("g")
 }

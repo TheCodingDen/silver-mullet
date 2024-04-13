@@ -2,8 +2,9 @@ import { APIEmbed, SnowflakeUtil } from 'discord.js'
 import color from './color'
 import client from '../clients/discord'
 
-export const messageLink = ({ guildId, channelId, messageId }: { guildId: string, channelId: string, messageId: string }): string =>
-  `https://discord.com/channels/${guildId}/${channelId}/${messageId}`
+export const channelLink = (channelId: string): string => {
+  return `<#${channelId}>`
+}
 
 export const isDiscordID = (id: string): boolean => {
   try {

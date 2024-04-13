@@ -2,7 +2,7 @@ import { AutoModerationActionExecution, AutoModerationActionType } from 'discord
 import { addMessage } from '../cache/op'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
-import { actionFilterHit } from '../detection/actions'
+import { actionFilterHit } from '../actions'
 import { executeFilterDetection } from '../detection/filter-detection'
 import { shouldIgnoreMessage } from '../utils/ignore'
 import Nilsimsa from '../vendor/nilsimsa'
@@ -76,7 +76,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     hexHash: new Nilsimsa(event.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, guild.id)
+  const filterResult = await executeFilterDetection(messageToCache, guild)
   if (filterResult) {
     logger.debug(`User ${user.id} hit filter ${JSON.stringify(filterResult, undefined, 2)}`)
     const actionResult = await actionFilterHit(filterResult, member)

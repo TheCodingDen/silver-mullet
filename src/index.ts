@@ -15,7 +15,7 @@ import path from 'path'
 import prisma from './clients/prisma'
 import redis from './clients/redis'
 import discord from './clients/discord'
-import { initActionComponents } from './detection/actions'
+import { initActionComponents } from './actions'
 import { errStack } from './utils'
 
 const creator = new SlashCreator({
