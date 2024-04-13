@@ -2,8 +2,9 @@ import { DiscordAPIError, Guild, GuildMember, GuildTextBasedChannel } from 'disc
 import { AntiSpamAction } from '@prisma/client'
 import { ban } from './ban'
 import { kick } from './kick'
-import { queueBan, queueKick } from './queue'
+import { queueBan, queueKick, queueMute } from './queue'
 import { DetectionResult } from '../detection/types'
+import { mute } from './mute'
 
 export const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: ban,

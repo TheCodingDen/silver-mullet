@@ -3,17 +3,17 @@ import { ActionUpgrade } from '../clients/redis'
 import { getLogChannel, makeDefaultEmbed, handleRetryResult, makeComponents, messageUser } from '../detection/utils'
 import color from '../utils/color'
 import { retryCallback } from '../utils/retry'
-import { ActionFunction, EJECTIONS, ignoreFailedDeliver } from './'
+import { ActionFunction, REMOVAL_OPTIONS, ignoreFailedDeliver } from './'
 import { updateQueueMessage } from './utils'
 
 export const mute: ActionFunction = async (member, message, result) => {
   const [muteResult, messageResult] = await Promise.all([
-    retryCallback(async () => await member.timeout(EJECTIONS.mute.opts[0], EJECTIONS.mute.opts[1]), {
+    retryCallback(async () => await member.timeout(REMOVAL_OPTIONS.mute.opts[0], REMOVAL_OPTIONS.mute.opts[1]), {
       attempts: 3,
       errorPredicate: ignoreFailedDeliver
     }),
     retryCallback(async () => await messageUser(member.user, {
-      content: EJECTIONS.mute.message(member.guild)
+      content: REMOVAL_OPTIONS.mute.message(member.guild)
     }), {
       attempts: 3,
       errorPredicate: ignoreFailedDeliver
