@@ -6,8 +6,9 @@ import { errStack } from '../utils'
 import color from '../utils/color'
 import { channelLink, embedBase } from '../utils/discordUtils'
 import { RetryResult } from '../utils/retry'
-import { ActionFunction, DetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult, TriggeringMessage } from '../actions'
+import { ActionFunction, TriggeringMessage } from '../actions'
 import { Comparison } from './spam-detection'
+import { DetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {

@@ -1,10 +1,9 @@
 import { DiscordAPIError, Guild, GuildMember, GuildTextBasedChannel } from 'discord.js'
-import { Comparison } from '../detection/spam-detection'
-import { CachedMessage } from '../clients/redis'
-import { AntiSpamAction, Filter } from '@prisma/client'
+import { AntiSpamAction } from '@prisma/client'
 import { ban } from './ban'
 import { kick } from './kick'
 import { queueBan, queueKick } from './queue'
+import { DetectionResult } from '../detection/types'
 
 export const actions: Record<AntiSpamAction, ActionFunction> = {
   BAN: ban,
@@ -18,34 +17,6 @@ export { initActionComponents } from './init'
 
 export const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
 export type ActionFunction = (member: GuildMember, message: TriggeringMessage, result: DetectionResult) => Promise<unknown>
-
-export enum DetectionSource {
-  FILTER = 'filter',
-  SPAM = 'spam'
-}
-
-interface DetectionResultBase {
-  action: AntiSpamAction
-}
-
-export interface SpamDetectionResult extends DetectionResultBase {
-  source: 'spam'
-
-  averageSimilarity: number
-  totalPoints: number
-  comparisons: Comparison[]
-}
-
-export interface FilterDetectionResult extends DetectionResultBase {
-  source: 'filter'
-
-  trippedFilter: Filter
-  author: GuildMember
-  message: CachedMessage
-  guild: Guild
-}
-
-export type DetectionResult = SpamDetectionResult | FilterDetectionResult
 
 // A message which triggered an automod action within the bot. Abstracts over AutoMod messages & Discord messages
 export interface TriggeringMessage {

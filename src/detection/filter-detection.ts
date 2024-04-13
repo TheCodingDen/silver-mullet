@@ -2,7 +2,7 @@ import prisma from '../clients/prisma'
 import decancer from 'decancer'
 import { CachedMessage } from '../clients/redis'
 import { Guild } from 'discord.js'
-import { FilterDetectionResult } from '../actions'
+import { FilterDetectionResult } from './types'
 
 export async function executeFilterDetection (message: CachedMessage, guild: Guild): Promise<FilterDetectionResult | undefined> {
   const filters = await prisma.filter.findMany({

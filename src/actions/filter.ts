@@ -1,6 +1,7 @@
 import { ChannelType, GuildMember } from 'discord.js'
 import { errMessage, errStack } from '../utils'
-import { DetectionResult, FilterDetectionResult, TriggeringMessage, actions } from '.'
+import { TriggeringMessage, actions } from '.'
+import { DetectionResult, FilterDetectionResult } from '../detection/types'
 
 export interface FilterActionResult {
   success: boolean

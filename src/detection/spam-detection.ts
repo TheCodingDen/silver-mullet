@@ -2,7 +2,7 @@ import { CrossChannelAntiSpamSettings } from '@prisma/client'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import Nilsimsa from '../vendor/nilsimsa'
-import { SpamDetectionResult } from '../actions'
+import { SpamDetectionResult } from './types'
 
 export type MatchWeights = Record<string, number>
 
