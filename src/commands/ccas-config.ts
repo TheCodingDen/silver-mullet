@@ -8,7 +8,7 @@ import {
   AutocompleteContext,
   AutocompleteChoice
 } from 'slash-create'
-import { AntiSpamAction, CrossChannelAntiSpamSettings, PermissionGroup } from '@prisma/client'
+import { AntiSpamAction, PermissionGroup } from '@prisma/client'
 import _ from 'lodash'
 import didYouMean, { ReturnTypeEnums } from 'didyoumean2'
 import { embedBase } from '../utils/discordUtils'
@@ -16,16 +16,14 @@ import prisma from '../clients/prisma'
 import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
 import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
 
-const DEFAULT_CONFIG: CrossChannelAntiSpamSettings = {
-  version: 1,
+const DEFAULT_CONFIG = {
   minMessageLength: 10,
   shortMessageLength: 15,
   shortMessageSimilarityThreshold: 85,
   similarityThreshold: 128,
   cacheTTLSeconds: 180,
   maxSizeDiffPercentage: 30,
-  pointsOnMatch: 1,
-  guildID: '--UNSET--'
+  pointsOnMatch: 1
 }
 
 export default class CCASConfigCommand extends SlashCommand {
@@ -252,7 +250,7 @@ export default class CCASConfigCommand extends SlashCommand {
       return void await sendFailure('This command needs to be run in a guild.', ctx)
     }
 
-    const newSettings: CrossChannelAntiSpamSettings = {
+    const newSettings = {
       ...DEFAULT_CONFIG,
       guildID: ctx.guildID
     }
