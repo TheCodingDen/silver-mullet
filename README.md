@@ -68,6 +68,8 @@ npm run bootstrap
 
 # Start and get coding
 npm run dev
+
+# Once booted, run /ccas-config init to setup the CCAS system
 ```
 
 To run the unit tests, run `npm t -- npm run test:base`.
