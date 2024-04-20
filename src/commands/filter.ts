@@ -1,4 +1,4 @@
-import { AntiSpamAction, PermissionGroup } from '@prisma/client'
+import { AntiSpamAction, PermissionGroup, Preset } from '@prisma/client'
 import {
   SlashCommand,
   SlashCreator,
@@ -53,9 +53,62 @@ export default class FilterCommand extends SlashCommand {
             },
             {
               type: CommandOptionType.STRING,
+              name: 'presets',
+              description: 'The presets to add to the filter',
+              required: false
+            },
+            {
+              type: CommandOptionType.STRING,
               name: 'flags',
               description: 'The flags to use. Defaults to "g", "i" is always enabled. Pass "none" to have no flags.',
               required: false
+            }
+          ]
+        },
+        {
+          type: CommandOptionType.SUB_COMMAND_GROUP,
+          name: 'edit',
+          description: 'Edit a filter. Admins only.',
+          options: [
+            {
+              type: CommandOptionType.SUB_COMMAND,
+              name: 'regex',
+              description: 'Edit the regex of a filter',
+              options: [
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'filter',
+                  description: 'The filter to remove',
+                  autocomplete: true,
+                  required: true
+                },
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'regex',
+                  description: 'The new regex',
+                  required: true
+                }
+              ]
+            },
+            {
+              type: CommandOptionType.SUB_COMMAND,
+              name: 'preset',
+              description: 'Edit the presets of a filter',
+              options: [
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'filter',
+                  description: 'The filter to remove',
+                  autocomplete: true,
+                  required: true
+                },
+                {
+                  type: CommandOptionType.STRING,
+                  name: 'presets',
+                  description: 'The new presets, comma separated',
+                  required: false
+                }
+              ]
             }
           ]
         },
@@ -90,7 +143,11 @@ export default class FilterCommand extends SlashCommand {
         }, {})
 
         const validOptions = filters.map(f => idToRegex[f.id])
-        const input = options?.remove?.filter
+        const input = (
+          options?.remove ??
+          options?.edit?.regex ??
+          options?.edit?.preset
+        ).filter
 
         const likely = didYouMean(
           input,
@@ -120,8 +177,114 @@ export default class FilterCommand extends SlashCommand {
       },
       remove: {
         [run]: this.remove.bind(this)
+      },
+      edit: {
+        preset: {
+          [run]: this.editPreset.bind(this)
+        },
+        regex: {
+          [run]: this.editRegex.bind(this)
+        }
       }
     })
+  }
+
+  private async loadPresetsForInput (input: string | undefined): Promise<Preset[]> {
+    let result: Preset[] = []
+
+    if (input) {
+      const splitPresets = input.split(/\s+,\s+/)
+      result = await Promise.all(
+        splitPresets.map(async (p) => {
+          const data = await prisma.preset.findFirst({
+            where: {
+              name: p
+            }
+          })
+
+          if (!data) {
+            throw new Error(`Preset ${p} does not exist`)
+          }
+
+          return data
+        })
+      )
+    }
+
+    return result
+  }
+
+  private async editPreset (ctx: GuildCommandContext): Promise<void> {
+    const { options } = ctx
+    const { filter: filterCuid, presets } = options.edit.preset as { filter: string, presets: string | undefined }
+
+    if (!(await prisma.filter.findFirst({ where: { id: filterCuid } }))) {
+      await sendFailure('That filter does not exist.', ctx)
+      return
+    }
+
+    let presetsToAdd
+    try {
+      presetsToAdd = await this.loadPresetsForInput(presets)
+    } catch (err) {
+      await sendFailure(`Presets "${presets}" could not be loaded: ${errMessage(err)}`, ctx)
+      logger.error(`Presets "${presets}" could not be loaded: ${errMessage(err)}\n${errStack(err)}`)
+      return
+    }
+
+    try {
+      await prisma.filter.update({
+        where: {
+          id: filterCuid
+        },
+        data: {
+          presets: {
+            set: presetsToAdd
+          }
+        }
+      })
+
+      logger.info(`${ctx.user.username} edited filter presets ${filterCuid} => ${presets}`)
+      await sendSuccess(`Updated filter presets to ${presets}`, ctx)
+    } catch (err) {
+      logger.error(`Failed to edit filter ${filterCuid}: ${errStack(err)}`)
+      await sendFailure(
+        `Failed to edit filter: ${errMessage(err)}`,
+        ctx,
+        false
+      )
+    }
+  }
+
+  private async editRegex (ctx: GuildCommandContext): Promise<void> {
+    const { options } = ctx
+    const { filter: filterCuid, regex } = options.edit.preset as { filter: string, regex: string }
+
+    if (!(await prisma.filter.findFirst({ where: { id: filterCuid } }))) {
+      await sendFailure('That filter does not exist.', ctx)
+      return
+    }
+
+    try {
+      await prisma.filter.update({
+        where: {
+          id: filterCuid
+        },
+        data: {
+          regex
+        }
+      })
+
+      logger.info(`${ctx.user.username} edited filter regex ${filterCuid} => ${regex}`)
+      await sendSuccess(`Updated filter regex to \`${regex}\``, ctx)
+    } catch (err) {
+      logger.error(`Failed to edit filter ${filterCuid}: ${errStack(err)}`)
+      await sendFailure(
+        `Failed to edit filter: ${errMessage(err)}`,
+        ctx,
+        false
+      )
+    }
   }
 
   private async get (ctx: GuildCommandContext): Promise<void> {

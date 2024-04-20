@@ -191,14 +191,14 @@ function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetec
     description: `
           **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`
-${message.content.trimStart().trimEnd() || '<no-content>'}
+  ${message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\` 
           **Action taken**:
           \`${action}\`
 
           **Filter**:
-          \`/${trippedFilter.regex}/${trippedFilter.flags}\`
-        `
+          \`/${trippedFilter.regex}/${trippedFilter.flags}\` (presets: ${trippedFilter.presets.map(p => `[${p.name} = \`/${p.regex}/${p.flags}\`]`).join(', ')})
+      `
   }
 }
 

@@ -1,4 +1,4 @@
-import { AntiSpamAction, Filter } from '@prisma/client'
+import { AntiSpamAction, Filter, Preset } from '@prisma/client'
 import { Comparison } from './spam-detection'
 import { Guild, GuildMember } from 'discord.js'
 import { CachedMessage } from '../clients/redis'
@@ -23,7 +23,7 @@ export interface SpamDetectionResult extends DetectionResultBase {
 export interface FilterDetectionResult extends DetectionResultBase {
   source: 'filter'
 
-  trippedFilter: Filter
+  trippedFilter: Filter & { presets: Preset[] }
   author: GuildMember
   message: CachedMessage
   guild: Guild

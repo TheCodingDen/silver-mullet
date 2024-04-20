@@ -79,9 +79,21 @@ model PointOverride {
 }
 
 model Filter {
-  id      String @id @default(cuid())
+  id      String         @id @default(cuid())
   guildID String
   regex   String
   action  AntiSpamAction @default(BAN)
-  flags   String @default("g")
+  flags   String         @default("g")
+
+  presets Preset[]
+}
+
+model Preset {
+  name     String  @id
+  regex    String
+  flags    String @default("g")
+  guildID  String
+
+  filter   Filter? @relation(fields: [filterId], references: [id])
+  filterId String?
 }

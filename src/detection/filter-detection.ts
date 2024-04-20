@@ -8,6 +8,9 @@ export async function executeFilterDetection (message: CachedMessage, guild: Gui
   const filters = await prisma.filter.findMany({
     where: {
       guildID: guild.id
+    },
+    include: {
+      presets: true
     }
   })
 
@@ -19,8 +22,19 @@ export async function executeFilterDetection (message: CachedMessage, guild: Gui
   const content = decancer(message.content).toString()
 
   const matchedFilter = filters.find(f => {
-    const regexp = new RegExp(f.regex, f.flags)
-    return regexp.test(content)
+    const mainRegexp = new RegExp(f.regex, f.flags)
+    if (!mainRegexp.test(content)) {
+      return false
+    }
+
+    for (const preset of f.presets) {
+      const presetRegexp = new RegExp(preset.regex, preset.flags)
+      if (!presetRegexp.test(content)) {
+        return false
+      }
+    }
+
+    return true
   })
 
   if (matchedFilter) {
