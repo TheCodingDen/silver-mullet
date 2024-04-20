@@ -16,6 +16,16 @@ import prisma from '../clients/prisma'
 import { alphabetical, errMessage, errStack, humanLikely } from '../utils'
 import { run, getAssignedGuilds, handleCommand, sendFailure, sendSuccess } from '../utils/commands'
 
+const DEFAULT_CONFIG = {
+  minMessageLength: 10,
+  shortMessageLength: 15,
+  shortMessageSimilarityThreshold: 85,
+  similarityThreshold: 128,
+  cacheTTLSeconds: 180,
+  maxSizeDiffPercentage: 30,
+  pointsOnMatch: 1
+}
+
 export default class CCASConfigCommand extends SlashCommand {
   constructor (creator: SlashCreator) {
     super(creator, {
@@ -127,6 +137,12 @@ export default class CCASConfigCommand extends SlashCommand {
               ]
             }
           ]
+        },
+        {
+          type: CommandOptionType.SUB_COMMAND,
+          name: 'init',
+          description: 'Initialize the CCAS config to their default values. Must not have a config set yet.',
+          options: []
         }
       ]
     })
@@ -155,6 +171,9 @@ export default class CCASConfigCommand extends SlashCommand {
         remove: {
           [run]: this.removeActionMapping.bind(this)
         }
+      },
+      init: {
+        [run]: this.init.bind(this)
       }
     })
   }
@@ -212,6 +231,35 @@ export default class CCASConfigCommand extends SlashCommand {
         logger.warn(`Unknown autocompletable field ${focused} for command '${this.commandName}'!`)
         return []
     }
+  }
+
+  private async init (ctx: CommandContext): Promise<void> {
+    const settings = await prisma.crossChannelAntiSpamSettings.count({
+      where: {
+        guildID: ctx.guildID
+      }
+    })
+
+    if (settings !== 0) {
+      return void await sendFailure('CCAS config already setup for this guild.', ctx)
+    }
+
+    const guildID = ctx.guildID
+
+    if (!guildID) {
+      return void await sendFailure('This command needs to be run in a guild.', ctx)
+    }
+
+    const newSettings = {
+      ...DEFAULT_CONFIG,
+      guildID: ctx.guildID
+    }
+
+    await prisma.crossChannelAntiSpamSettings.create({
+      data: newSettings
+    })
+
+    await sendSuccess('Default settings initialised.', ctx)
   }
 
   private async get (ctx: CommandContext): Promise<void> {
