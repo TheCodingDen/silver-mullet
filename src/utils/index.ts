@@ -8,9 +8,9 @@ export const humanLikely = (input: string, likely: string[], matchingAgainst: st
   input === '' || likely.includes(matchingAgainst)
 
 export const errMessage = (err: unknown): string =>
-  err instanceof Error ? err.message : String(err)
+  err instanceof Error ? err.message : JSON.stringify(err)
 
 export const errStack = (err: unknown): string =>
   err instanceof Error
     ? err.stack ?? err.message
-    : String(err)
+    : JSON.stringify(err)
