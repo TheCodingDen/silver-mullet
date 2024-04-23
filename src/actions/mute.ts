@@ -8,7 +8,7 @@ import { updateQueueMessage } from './utils'
 
 export const mute: ActionFunction = async (member, message, result) => {
   const [muteResult, messageResult] = await Promise.all([
-    retryCallback(async () => await member.timeout(...REMOVAL_OPTIONS.mute.opts), {
+    retryCallback(async () => await member.timeout(REMOVAL_OPTIONS.mute.opts.duration, REMOVAL_OPTIONS.mute.opts.reason), {
       attempts: 3,
       errorPredicate: ignoreFailedDeliver
     }),

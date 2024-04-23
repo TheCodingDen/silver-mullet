@@ -30,8 +30,6 @@ export interface TriggeringMessage {
 }
 
 // Timeout in millis. 5 minutes.
-const muteDuration = 5 * 1000 * 60
-const muteReason = 'Spam detected.'
 
 export const REMOVAL_OPTIONS = {
   ban: {
@@ -50,7 +48,10 @@ If you are not aware of what may have caused this, your account is likely compro
 If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   },
   mute: {
-    opts: [muteDuration, muteReason] as const,
+    opts: {
+      duration: 5 * 1000 * 60,
+      reason: 'Spam detected.'
+    },
     message: (guild: Guild) =>
 `You have been muted in ${guild.name} due to spam. If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   }
