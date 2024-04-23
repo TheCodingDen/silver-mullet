@@ -3,7 +3,9 @@ import { errMessage, errStack } from '../utils'
 import { TriggeringMessage, actions } from '.'
 import { DetectionResult, FilterDetectionResult } from '../detection/types'
 import { FilterMode } from '@prisma/client'
-import { getLogChannel, makeDefaultEmbed } from '../detection/utils'
+import { getLogChannel } from '../detection/utils'
+import { channelLink, embedBase } from '../utils/discordUtils'
+import color from '../utils/color'
 
 export interface FilterActionResult {
   success: boolean
@@ -41,11 +43,35 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     guild: member.guild
   }
 
+  const logChannel = await getLogChannel(message.guild)
+
   // The only real hit was for a debug filter, simply log.
   if (hit.trippedFilter.mode === FilterMode.DEBUG) {
-    const logChannel = await getLogChannel(message.guild)
+    const filter = hit.trippedFilter
     await logChannel.send({
-      embeds: [makeDefaultEmbed(message, result)]
+      embeds: [
+        // If we hit a debug filter (and no active filters), communicate that
+        {
+          ...embedBase(),
+          title: 'Debug filter triggered',
+          color: color.blurple,
+          author: {
+            name: `@${message.author.user.username} (${message.author.id})`,
+            icon_url: message.author.displayAvatarURL()
+          },
+          description: `
+**Triggered in** (${channelLink(message.channel.id)}):
+\`\`\`
+${message.content.trimStart().trimEnd() || '<no-content>'}
+\`\`\` 
+**Action to be taken**:
+\`${filter.action}\`
+
+**Filter**:
+\`/${filter.regex}/${filter.flags}\` (mode: ${filter.mode})
+          `
+        }
+      ]
     })
     return {
       success: true
@@ -61,6 +87,36 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     return {
       success: false
     }
+  }
+
+  // Log the debug stuff after the main log
+  for (const dbg of hit.debuggedFilters) {
+    const { filter, action } = dbg
+    await logChannel.send({
+      embeds: [
+        // If we hit a debug filter (and no active filters), communicate that
+        {
+          ...embedBase(),
+          title: 'Debug filter triggered',
+          color: color.blurple,
+          author: {
+            name: `@${message.author.user.username} (${message.author.id})`,
+            icon_url: message.author.displayAvatarURL()
+          },
+          description: `
+**Triggered in** (${channelLink(message.channel.id)}):
+\`\`\`
+${message.content.trimStart().trimEnd() || '<no-content>'}
+\`\`\` 
+**Action to be taken**:
+\`${action}\`
+
+**Filter**:
+\`/${filter.regex}/${filter.flags}\` (mode: ${filter.mode})
+        `
+        }
+      ]
+    })
   }
 
   return {
