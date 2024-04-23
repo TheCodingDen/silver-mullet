@@ -9,6 +9,7 @@ import { RetryResult } from '../utils/retry'
 import { ActionFunction, TriggeringMessage } from '../actions'
 import { Comparison } from './spam-detection'
 import { DetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
+import { FilterMode } from '@prisma/client'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
@@ -179,7 +180,38 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
 }
 
 function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetectionResult): APIEmbed {
-  const { action, trippedFilter } = result
+  const { action, trippedFilter, debuggedFilters } = result
+  const debuggedString = debuggedFilters
+    .map(f => `\`/${f.filter.regex}/${f.filter.flags}\` (mode: ${f.filter.mode}) (action: ${f.action})`)
+    .join('\n') || 'None'
+
+  // If we hit a debug filter (and no active filters), communicate that
+  if (trippedFilter.mode === FilterMode.DEBUG) {
+    return {
+      ...embedBase(),
+      title: 'Debug filter triggered',
+      color: color.blurple,
+      author: {
+        name: `@${message.author.user.username} (${message.author.id})`,
+        icon_url: message.author.displayAvatarURL()
+      },
+      description: `
+          **Triggered in** (${channelLink(message.channel.id)}):
+          \`\`\`
+${message.content.trimStart().trimEnd() || '<no-content>'}
+          \`\`\` 
+          **Action taken**:
+          \`LOG\`
+
+          **Filter**:
+          \`/${trippedFilter.regex}/${trippedFilter.flags}\` (mode: ${trippedFilter.mode})
+
+          **Debug hits**:
+          ${debuggedString}
+        `
+    }
+  }
+
   return {
     ...embedBase(),
     title: 'Filter triggered',
@@ -198,6 +230,9 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
 
           **Filter**:
           \`/${trippedFilter.regex}/${trippedFilter.flags}\`
+
+          **Debug hits**:
+          ${debuggedString}
         `
   }
 }

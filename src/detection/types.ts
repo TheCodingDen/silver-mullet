@@ -20,6 +20,11 @@ export interface SpamDetectionResult extends DetectionResultBase {
   comparisons: Comparison[]
 }
 
+export interface DebugFilterResult {
+  filter: Filter
+  action: AntiSpamAction
+}
+
 export interface FilterDetectionResult extends DetectionResultBase {
   source: 'filter'
 
@@ -27,6 +32,7 @@ export interface FilterDetectionResult extends DetectionResultBase {
   author: GuildMember
   message: CachedMessage
   guild: Guild
+  debuggedFilters: DebugFilterResult[]
 }
 
 export type DetectionResult = SpamDetectionResult | FilterDetectionResult

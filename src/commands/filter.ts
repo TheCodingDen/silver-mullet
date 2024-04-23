@@ -1,4 +1,4 @@
-import { AntiSpamAction, PermissionGroup } from '@prisma/client'
+import { AntiSpamAction, FilterMode, PermissionGroup } from '@prisma/client'
 import {
   SlashCommand,
   SlashCreator,
@@ -49,6 +49,13 @@ export default class FilterCommand extends SlashCommand {
               name: 'action',
               description: 'The action to perform.',
               choices: _.keys(AntiSpamAction).map(action => ({ name: action, value: action })),
+              required: true
+            },
+            {
+              type: CommandOptionType.STRING,
+              name: 'mode',
+              description: 'The mode to use the filter with.',
+              choices: _.keys(FilterMode).map(action => ({ name: action, value: action })),
               required: true
             },
             {
@@ -140,9 +147,10 @@ export default class FilterCommand extends SlashCommand {
 
   private async add (ctx: GuildCommandContext): Promise<void> {
     const { options } = ctx
-    let { regex: rawRegex, flags, action } = options.add as {
+    let { regex: rawRegex, flags, action, mode } = options.add as {
       regex: string
       action: AntiSpamAction
+      mode: FilterMode
       flags: string
     }
 
@@ -165,6 +173,7 @@ export default class FilterCommand extends SlashCommand {
           regex: regex.source,
           guildID: ctx.guildID,
           flags,
+          mode,
           action
         }
       })

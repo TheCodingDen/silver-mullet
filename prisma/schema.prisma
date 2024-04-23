@@ -78,10 +78,16 @@ model PointOverride {
   settings        CrossChannelAntiSpamSettings @relation("pointOverrides", fields: [settingsVersion], references: [version], onDelete: Cascade)
 }
 
+enum FilterMode {
+  DEBUG
+  ACTIVE
+}
+
 model Filter {
   id      String @id @default(cuid())
   guildID String
   regex   String
   action  AntiSpamAction @default(BAN)
   flags   String @default("g")
+  mode    FilterMode @default(ACTIVE)
 }
