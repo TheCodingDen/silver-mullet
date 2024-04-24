@@ -4,3 +4,4 @@ import { makeQueueCallback } from '../detection/utils'
 
 export const queueBan: ActionFunction = makeQueueCallback(ActionUpgrade.BAN)
 export const queueKick: ActionFunction = makeQueueCallback(ActionUpgrade.KICK)
+export const queueMute: ActionFunction = makeQueueCallback(ActionUpgrade.MUTE)

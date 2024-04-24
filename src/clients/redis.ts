@@ -38,6 +38,7 @@ export type CachedMessage = CachedMessageBase & Entity
 export enum ActionUpgrade {
   BAN = 'ban',
   KICK = 'kick',
+  MUTE = 'mute',
 }
 
 interface QueuedActionBase {
