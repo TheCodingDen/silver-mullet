@@ -85,7 +85,7 @@ export default class FilterCommand extends SlashCommand {
         const filters = await prisma.filter.findMany({})
 
         const idToRegex = filters.reduce<Record<string, string>>((acc, val) => {
-          acc[val.id] = val.regex
+          acc[val.id] = val.regex.substring(0, 90)
           return acc
         }, {})
 
