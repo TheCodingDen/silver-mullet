@@ -41,7 +41,7 @@ export default class FilterCommand extends SlashCommand {
             {
               type: CommandOptionType.STRING,
               name: 'regex',
-              description: 'The regex to trigger with. Supplied as-is, without / / syntax. "none" to match nothing.',
+              description: 'The regex to trigger with. Supplied as-is, without / / syntax.',
               required: true
             },
             {
@@ -311,10 +311,6 @@ export default class FilterCommand extends SlashCommand {
 
     if (flags === 'none') {
       flags = ''
-    }
-
-    if (rawRegex === 'none') {
-      rawRegex = ''
     }
 
     let regex: RegExp
