@@ -4,6 +4,8 @@ import prisma from '../clients/prisma'
 import { actionFilterHit, actions } from '../actions/'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
 import { errStack } from '../utils/index'
+import { extractURLs } from '../utils/url'
+import { scanURLs } from '../detection/url-scan'
 import Nilsimsa from '../vendor/nilsimsa'
 import { retryCallback } from '../utils/retry'
 import { executeFilterDetection } from '../detection/filter-detection'
@@ -71,6 +73,15 @@ export async function onGuildMessage (message: Message): Promise<void> {
     channelId: message.channel.id,
     content: message.content,
     hexHash: new Nilsimsa(message.content).digest('hex')
+  }
+
+  const urls = extractURLs(messageToCache.content)
+  if (urls.length) {
+    // Let's scan these URLs
+    const result = scanURLs(urls)
+    if (result.hit) {
+      logger.info(`Got a hit on URLs ${JSON.stringify(result)}`)
+    }
   }
 
   const filterResult = await executeFilterDetection(messageToCache, message.guild)
