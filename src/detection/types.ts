@@ -5,7 +5,8 @@ import { CachedMessage } from '../clients/redis'
 
 export enum DetectionSource {
   FILTER = 'filter',
-  SPAM = 'spam'
+  SPAM = 'spam',
+  URL = 'url'
 }
 
 interface DetectionResultBase {
@@ -29,4 +30,12 @@ export interface FilterDetectionResult extends DetectionResultBase {
   guild: Guild
 }
 
-export type DetectionResult = SpamDetectionResult | FilterDetectionResult
+export interface URLDetectionResult extends DetectionResultBase {
+  source: 'url'
+
+  message: CachedMessage
+  guild: Guild
+  trippedURLs: URL[]
+}
+
+export type DetectionResult = SpamDetectionResult | FilterDetectionResult | URLDetectionResult

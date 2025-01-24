@@ -1,10 +1,9 @@
 import { Message, MessageType } from 'discord.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import prisma from '../clients/prisma'
-import { actionFilterHit, actions } from '../actions/'
+import { actionFilterHit, actionURLHit, actions } from '../actions/'
 import { executeAntiSpamDetection } from '../detection/spam-detection'
 import { errStack } from '../utils/index'
-import { extractURLs } from '../utils/url'
 import { scanURLs } from '../detection/url-scan'
 import Nilsimsa from '../vendor/nilsimsa'
 import { retryCallback } from '../utils/retry'
@@ -75,14 +74,13 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  const urls = extractURLs(messageToCache.content)
-  if (urls.length) {
-    // Let's scan these URLs
-    const result = scanURLs(urls)
-    if (result.hit) {
-      logger.info(`Got a hit on URLs ${JSON.stringify(result)}`)
+  // IMPORTANT: Run this concurrently
+  void scanURLs(messageToCache, message.guild).then(urlResult => {
+    if (urlResult) {
+      logger.info(`Got a hit on URLs ${urlResult.trippedURLs}`)
+      void actionURLHit(urlResult, member)
     }
-  }
+  })
 
   const filterResult = await executeFilterDetection(messageToCache, message.guild)
   if (filterResult) {

@@ -16,6 +16,7 @@ export const actions: Record<AntiSpamAction, ActionFunction> = {
 }
 
 export { actionFilterHit } from './filter'
+export { actionURLHit } from './url'
 export { initActionComponents } from './init'
 
 export const ignoreFailedDeliver = (err: unknown): boolean => (err instanceof DiscordAPIError) && err.code === 5007 // Cannot send messages to this user
