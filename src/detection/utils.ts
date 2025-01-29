@@ -183,7 +183,7 @@ function makeURLDefaultEmbed (message: TriggeringMessage, result: URLDetectionRe
   const showURL = (url: BadLink): string => {
     const categories = url.categories.map(c => `**${c}**`).join(', ')
     const urls = url.redirects.map(u => `- ${u}`).join('\n') || '[No redirects known]'
-    const reportURL = url.reportURL ? `[View full report on Cloudflare Radar](${url.reportURL})` : '[No report URL available]'
+    const reportURL = `[View full report on Cloudflare Radar](${url.reportURL})`
 
     return `Final destination: ${url.url}\nCategories: ${categories}\n\nRedirect chain:\n${urls}\n\n${reportURL}`
   }

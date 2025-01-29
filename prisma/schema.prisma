@@ -95,8 +95,12 @@ enum DomainVerdict {
 
 model Link {
   id      String        @id @default(cuid())
+  scannedAt DateTime @default(now())
+  rawResult Json
   verdict DomainVerdict
   categories String[]
+  redirects String[]
+  reportURL String
   domain  String
   caughtURL String
   guildID String

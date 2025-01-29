@@ -18,7 +18,8 @@ export interface BadLink {
   verdict: DomainVerdict
   categories: string[]
   redirects: string[]
-  reportURL?: string
+  reportURL: string
+  rawResult: any
 }
 
 async function scanURL (url: URL): Promise<ScanCreateResponse> {
@@ -59,7 +60,8 @@ async function pollForResult (submission: ScanCreateResponse): Promise<BadLink> 
       categories: res.verdicts.overall.categories,
       verdict: res.verdicts.overall.malicious ? DomainVerdict.MALICIOUS : DomainVerdict.BENIGN,
       redirects: res.lists.urls,
-      reportURL: res.task.reportURL
+      reportURL: res.task.reportURL,
+      rawResult: res
     }
   } catch (_err) {
     const err = _err as APIError
@@ -77,7 +79,6 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
     where: {
       AND: {
         domain: url.hostname,
-        verdict: DomainVerdict.MALICIOUS,
         guildID: guildId
       }
     }
@@ -86,8 +87,10 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
   if (existing) {
     return {
       domain: existing.domain,
+      rawResult: existing.rawResult,
+      reportURL: existing.reportURL,
       url: existing.caughtURL,
-      redirects: [],
+      redirects: existing.redirects,
       verdict: existing.verdict,
       categories: existing.categories
     }
@@ -105,14 +108,24 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
   logger.info(`Scanning URLs ${urls}`)
   const promises = []
   const alreadyExisted = []
+
   for (const url of urls) {
     const existing = await getExistingMatch(url, guild.id)
     if (existing) {
+      // Don't log rawResult, it's massive
+      const { rawResult: _, ...rest } = existing
+
+      logger.debug(`Found existing scan match: ${JSON.stringify(rest)}`)
       alreadyExisted.push(existing.domain)
       promises.push(Promise.resolve(existing))
     } else {
+      logger.debug(`No match found for ${url}, scanning`)
       const doScan = scanURL(url).then(async x => {
+        logger.debug(`Scan started for ${url}`)
         return await pollForResult(x)
+      }).then(x => {
+        logger.debug(`Scan finished for URL ${url}, verdict: ${x.verdict}`)
+        return x
       })
       promises.push(doScan)
     }
@@ -140,6 +153,9 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
         caughtURL: link.url,
         domain: link.domain,
         guildID: guild.id,
+        reportURL: link.reportURL,
+        rawResult: link.rawResult,
+        redirects: link.redirects,
         verdict: DomainVerdict.MALICIOUS
       }
     })
