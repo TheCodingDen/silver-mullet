@@ -44,6 +44,7 @@
     "didyoumean2": "^5.0.0",
     "discord.js": "^14.11.0",
     "dotenv-safe": "^8.2.0",
+    "get-urls": "^12.1.0",
     "lodash": "^4.17.21",
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",

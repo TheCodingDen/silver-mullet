@@ -1,6 +1,5 @@
 import { CachedMessage } from '../clients/redis'
 import { URLDetectionResult } from '../detection/types'
-import { extractURLs } from '../utils/url'
 import { Guild } from 'discord.js'
 import { cloudflare, accountId } from '../clients/cloudflare'
 import { ScanCreateResponse } from 'cloudflare/resources/url-scanner/scans'
@@ -75,11 +74,17 @@ async function pollForResult (submission: ScanCreateResponse): Promise<BadLink> 
 }
 
 async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | undefined> {
+  const today = new Date()
+  const lastYear = new Date(today.setFullYear(today.getFullYear() - 1))
+
   const existing = await prisma.link.findFirst({
     where: {
       AND: {
         domain: url.hostname,
-        guildID: guildId
+        guildID: guildId,
+        scannedAt: {
+          gte: lastYear
+        }
       }
     }
   })
@@ -99,8 +104,21 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
   return undefined
 }
 
+async function extractURLs (str: string): Promise<URL[]> {
+  // Don't really want to mess around trying to get ESM modules to load on our runtime
+  // So we will just do this for now. get-urls is ESM only
+  const getUrls = (await import('get-urls')).default
+
+  const opts = {
+    requireSchemeOrWww: true
+  }
+
+  return [...getUrls(str, opts)]
+    .map(u => new URL(u))
+};
+
 export async function scanURLs (message: CachedMessage, guild: Guild): Promise<URLDetectionResult | undefined> {
-  const urls = extractURLs(message.content)
+  const urls = await extractURLs(message.content)
   if (!urls.length) {
     return undefined
   }
