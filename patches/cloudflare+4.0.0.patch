@@ -1,0 +1,63 @@
+diff --git a/node_modules/cloudflare/resources/url-scanner/scans.d.ts b/node_modules/cloudflare/resources/url-scanner/scans.d.ts
+index 6532ca7..5355a0a 100644
+--- a/node_modules/cloudflare/resources/url-scanner/scans.d.ts
++++ b/node_modules/cloudflare/resources/url-scanner/scans.d.ts
+@@ -49,7 +49,16 @@ export declare class Scans extends APIResource {
+ /**
+  * URL to report.
+  */
+-export type ScanCreateResponse = string;
++export interface ScanCreateResponse {
++    api: string,
++    message: string,
++    result: string,
++    uuid: string,
++    visibility: string,
++    options?: {
++        useragent: string
++    }
++}
+ export interface ScanListResponse {
+     results: Array<ScanListResponse.Result>;
+ }
+diff --git a/node_modules/cloudflare/resources/url-scanner/scans.js b/node_modules/cloudflare/resources/url-scanner/scans.js
+index cdde9a8..02f267b 100644
+--- a/node_modules/cloudflare/resources/url-scanner/scans.js
++++ b/node_modules/cloudflare/resources/url-scanner/scans.js
+@@ -13,7 +13,7 @@ class Scans extends resource_1.APIResource {
+         return this._client.post(`/accounts/${account_id}/urlscanner/v2/scan`, {
+             body,
+             ...options,
+-        })._thenUnwrap((obj) => obj.result);
++        })
+     }
+     /**
+      * Use a subset of ElasticSearch Query syntax to filter scans. Some example
+diff --git a/node_modules/cloudflare/resources/url-scanner/scans.mjs b/node_modules/cloudflare/resources/url-scanner/scans.mjs
+index f6b3847..8c91918 100644
+--- a/node_modules/cloudflare/resources/url-scanner/scans.mjs
++++ b/node_modules/cloudflare/resources/url-scanner/scans.mjs
+@@ -10,7 +10,7 @@ export class Scans extends APIResource {
+         return this._client.post(`/accounts/${account_id}/urlscanner/v2/scan`, {
+             body,
+             ...options,
+-        })._thenUnwrap((obj) => obj.result);
++        })
+     }
+     /**
+      * Use a subset of ElasticSearch Query syntax to filter scans. Some example
+diff --git a/node_modules/cloudflare/src/resources/url-scanner/scans.ts b/node_modules/cloudflare/src/resources/url-scanner/scans.ts
+index 922ce25..1836bea 100644
+--- a/node_modules/cloudflare/src/resources/url-scanner/scans.ts
++++ b/node_modules/cloudflare/src/resources/url-scanner/scans.ts
+@@ -15,8 +15,8 @@ export class Scans extends APIResource {
+       this._client.post(`/accounts/${account_id}/urlscanner/v2/scan`, {
+         body,
+         ...options,
+-      }) as Core.APIPromise<{ result: ScanCreateResponse }>
+-    )._thenUnwrap((obj) => obj.result);
++      }) as Core.APIPromise<ScanCreateResponse>
++    )
+   }
+ 
+   /**

@@ -9,6 +9,7 @@ import { RetryResult } from '../utils/retry'
 import { ActionFunction, TriggeringMessage } from '../actions'
 import { Comparison } from './spam-detection'
 import { DetectionResult, URLDetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
+import { BadLink } from './url-scan'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
@@ -179,9 +180,17 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
 }
 
 function makeURLDefaultEmbed (message: TriggeringMessage, result: URLDetectionResult): APIEmbed {
+  const showURL = (url: BadLink): string => {
+    const categories = url.categories.map(c => `**${c}**`).join(', ')
+    const urls = url.redirects.map(u => `- ${u}`).join('\n') || '[No redirects known]'
+    const reportURL = url.reportURL ? `[View full report on Cloudflare Radar](${url.reportURL})` : '[No report URL available]'
+
+    return `Final destination: ${url.url}\nCategories: ${categories}\n\nRedirect chain:\n${urls}\n\n${reportURL}`
+  }
+
   return {
     ...embedBase(),
-    title: 'Bad URL detected',
+    title: 'Malicious URL detected',
     color: color.red,
     author: {
       name: `@${message.author.user.username} (${message.author.id})`,
@@ -195,10 +204,8 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
           **Action taken**:
           \`${result.action}\`
 
-          **URLs**:
-          \`\`\` 
-${result.trippedURLs.join('\n').trimStart().trimEnd()}
-          \`\`\` 
+          **Scanned URLs**:
+${result.trippedURLs.map(showURL).join('\n\n').trimStart().trimEnd()}
         `
   }
 }

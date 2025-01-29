@@ -2,124 +2,98 @@ import { CachedMessage } from '../clients/redis'
 import { URLDetectionResult } from '../detection/types'
 import { extractURLs } from '../utils/url'
 import { Guild } from 'discord.js'
+import { cloudflare, accountId } from '../clients/cloudflare'
+import { ScanCreateResponse } from 'cloudflare/resources/url-scanner/scans'
+import { APIError } from 'cloudflare'
+import prisma from '../clients/prisma'
+import { DomainVerdict } from '@prisma/client'
 
-const BASE_URL = 'https://api.cloudflare.com/client/v4'
-const account = process.env.RADAR_ACCOUNT
-
-function makeAPIURL (): string {
-  return `${BASE_URL}/accounts/${account}/urlscanner/v2/scan`
+async function sleep (ms: number): Promise<void> {
+  return void await new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function makeSearchURL (url: URL): string {
-  return `${BASE_URL}/accounts/${account}/urlscanner/v2/search?q=task.url:"${url.toString()}"`
-}
-
-export interface RadarSubmission {
-  uuid: string
-  api: string
-  visibility: string
+export interface BadLink {
+  domain: string
   url: string
-  message: string
-  status?: number
+  verdict: DomainVerdict
+  categories: string[]
+  redirects: string[]
+  reportURL?: string
 }
 
-export interface RadarResult {
-  task: {
-    uuid: string
-    url: string
-  }
-  verdicts: {
-    overall: {
-      malicious: boolean
-      tags: string[]
-    }
-  }
-}
-
-// We will use it in future
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function searchForURL (url: URL): Promise<RadarResult | undefined> {
-  const apiURL = makeSearchURL(url)
-  const token = process.env.RADAR_TOKEN
-  if (token === undefined || token === 'disabled') {
-    return undefined
-  }
-
-  const res = await fetch(apiURL, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    }
-  })
-    .then(async b => await b.json())
-    .then(b => b as RadarResult)
-
-  console.log(JSON.stringify(res, undefined, 2))
-  return res
-}
-
-async function scanURL (url: URL): Promise<RadarSubmission | undefined> {
-  const apiURL = makeAPIURL()
-  const token = process.env.RADAR_TOKEN
-  if (token === undefined || token === 'disabled') {
-    return undefined
-  }
-
-  const body = {
+async function scanURL (url: URL): Promise<ScanCreateResponse> {
+  const params = {
+    account_id: accountId(),
     url: url.toString()
   }
 
-  const res = await fetch(apiURL, {
-    body: JSON.stringify(body),
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
+  let res
+  try {
+    res = await cloudflare.urlScanner.scans.create(params)
+  } catch (_err) {
+    const err = _err as APIError
+    // Recently scanned / backoff
+    if (err.status === 429 || err.status === 409) {
+      // https://developers.cloudflare.com/security-center/investigate/scan-limits/
+      // 1 per 10 seconds
+      await sleep(10_000)
+      return await scanURL(url)
     }
-  })
-    .then(async b => await b.json())
-    .then(b => (b as RadarSubmission))
 
-  if (res.status && res.status === 409) {
-    logger.warn('409 when trying to scan')
-    return undefined
-    // TODO: return await searchForURL(url)
+    throw err
   }
 
   return res
 }
 
-async function pollForResult (submission: RadarSubmission): Promise<RadarResult> {
-  const token = process.env.RADAR_TOKEN
+async function pollForResult (submission: ScanCreateResponse): Promise<BadLink> {
+  const params = {
+    account_id: accountId()
+  }
 
-  return await new Promise((resolve, reject) => {
-    const poll = async (): Promise<void> => {
-      try {
-        const response = await fetch(submission.api, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          }
-        })
-        if (response.status !== 404) {
-          const data = await response.json()
-          resolve(data as RadarResult)
-        } else {
-          // Retry after 5 seconds
-          logger.debug(`Retrying for ${submission.url}`)
-
-          // This is fine
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          setTimeout(poll, 5_000)
-        }
-      } catch (error) {
-        reject(error)
-      }
+  try {
+    const res = await cloudflare.urlScanner.scans.get(submission.uuid, params)
+    return {
+      domain: res.task.domain,
+      url: res.task.url,
+      categories: res.verdicts.overall.categories,
+      verdict: res.verdicts.overall.malicious ? DomainVerdict.MALICIOUS : DomainVerdict.BENIGN,
+      redirects: res.lists.urls,
+      reportURL: res.task.reportURL
+    }
+  } catch (_err) {
+    const err = _err as APIError
+    if (err.status === 404) {
+      await sleep(5_000)
+      return await pollForResult(submission)
     }
 
-    void poll()
+    throw err
+  }
+}
+
+async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | undefined> {
+  const existing = await prisma.link.findFirst({
+    where: {
+      AND: {
+        domain: url.hostname,
+        verdict: DomainVerdict.MALICIOUS,
+        guildID: guildId
+      }
+    }
   })
+
+  if (existing) {
+    return {
+      domain: existing.domain,
+      url: existing.caughtURL,
+      redirects: [],
+      verdict: existing.verdict,
+      categories: existing.categories
+    }
+  }
+
+  return undefined
 }
 
 export async function scanURLs (message: CachedMessage, guild: Guild): Promise<URLDetectionResult | undefined> {
@@ -130,31 +104,52 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
 
   logger.info(`Scanning URLs ${urls}`)
   const promises = []
+  const alreadyExisted = []
   for (const url of urls) {
-    promises.push(scanURL(url).then(async x => {
-      if (x !== undefined) {
+    const existing = await getExistingMatch(url, guild.id)
+    if (existing) {
+      alreadyExisted.push(existing.domain)
+      promises.push(Promise.resolve(existing))
+    } else {
+      const doScan = scanURL(url).then(async x => {
         return await pollForResult(x)
-      }
-      return undefined
-    }))
+      })
+      promises.push(doScan)
+    }
   }
 
   const radarResults = (await Promise.all(promises))
-    .filter(x => x !== undefined)
 
   const tripped = radarResults
     .filter(r => {
-      return (r as RadarResult).verdicts.overall.malicious
+      return r.verdict === DomainVerdict.MALICIOUS
     })
-    .map(r => {
-      return (r as RadarResult).task.url
+
+  for (const link of tripped) {
+    if (link.verdict === DomainVerdict.BENIGN) {
+      continue
+    }
+
+    if (alreadyExisted.includes(link.domain)) {
+      continue
+    }
+
+    await prisma.link.create({
+      data: {
+        categories: link.categories,
+        caughtURL: link.url,
+        domain: link.domain,
+        guildID: guild.id,
+        verdict: DomainVerdict.MALICIOUS
+      }
     })
+  }
 
   if (tripped.length) {
     return {
       source: 'url',
       message,
-      trippedURLs: urls,
+      trippedURLs: tripped,
       guild,
       action: 'MUTE'
     }

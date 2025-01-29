@@ -2,6 +2,7 @@ import { AntiSpamAction, Filter } from '@prisma/client'
 import { Comparison } from './spam-detection'
 import { Guild, GuildMember } from 'discord.js'
 import { CachedMessage } from '../clients/redis'
+import { BadLink } from './url-scan'
 
 export enum DetectionSource {
   FILTER = 'filter',
@@ -35,7 +36,7 @@ export interface URLDetectionResult extends DetectionResultBase {
 
   message: CachedMessage
   guild: Guild
-  trippedURLs: URL[]
+  trippedURLs: BadLink[]
 }
 
 export type DetectionResult = SpamDetectionResult | FilterDetectionResult | URLDetectionResult
