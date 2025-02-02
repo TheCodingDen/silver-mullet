@@ -5,7 +5,7 @@ import { cloudflare, accountId } from '../clients/cloudflare'
 import { ScanCreateResponse } from 'cloudflare/resources/url-scanner/scans'
 import { APIError } from 'cloudflare'
 import prisma from '../clients/prisma'
-import { DomainVerdict } from '@prisma/client'
+import { AntiSpamAction, DomainVerdict } from '@prisma/client'
 import _ from 'lodash'
 import { errMessage } from '../utils'
 
@@ -207,9 +207,7 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
     .map(r => r.value)
 
   const tripped = radarResults
-    .filter(r => {
-      return r.verdict === DomainVerdict.MALICIOUS
-    })
+    .filter(r => r.verdict === DomainVerdict.MALICIOUS)
 
   for (const link of radarResults) {
     if (alreadyExisted.includes(link.domain)) {
@@ -230,13 +228,13 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
     })
   }
 
-  if (tripped.length) {
+  if (tripped.length !== 0) {
     return {
       source: 'url',
       message,
       trippedURLs: tripped,
       guild,
-      action: 'MUTE'
+      action: AntiSpamAction.MUTE
     }
   }
 

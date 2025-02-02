@@ -36,7 +36,7 @@ export async function actionURLHit (
   try {
     await action(member, message, hit)
   } catch (err) {
-    logger.error(
+    logger.warn(
       `Failed to action URL: ${errMessage(err)}\n${errStack(err)}`
     )
 
