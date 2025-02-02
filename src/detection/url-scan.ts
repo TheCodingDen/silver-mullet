@@ -176,6 +176,8 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
       currentlyScanning.add(url.href)
       logger.debug(`No match found for ${url}, scanning`)
       const doScan = scanURL(url, account).then(async scan => {
+        // scan will be undefined if the scan could not be created.
+        // this could be an intermitent failure, or a retry timeout
         if (scan === undefined) {
           currentlyScanning.delete(url.href)
           throw new Error(`Could not scan ${url}`)
@@ -186,6 +188,8 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
       }).then(result => {
         currentlyScanning.delete(url.href)
 
+        // scan will be undefined if the scan could not be fetched.
+        // this could be an intermitent failure, or a retry timeout
         if (result === undefined) {
           throw new Error(`Could not get result ${url}`)
         }
