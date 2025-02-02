@@ -8,6 +8,7 @@ import prisma from '../clients/prisma'
 import { AntiSpamAction, DomainVerdict } from '@prisma/client'
 import _ from 'lodash'
 import { errMessage } from '../utils'
+import extractURLs from 'extract-urls'
 
 const currentlyScanning = new Set<string>()
 
@@ -121,16 +122,8 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
   return undefined
 }
 
-async function extractURLs (str: string): Promise<URL[]> {
-  // Don't really want to mess around trying to get ESM modules to load on our runtime
-  // So we will just do this for now. get-urls is ESM only
-  const getUrls = (await import('get-urls')).default
-
-  const opts = {
-    requireSchemeOrWww: true
-  }
-
-  return [...getUrls(str, opts)]
+function doExtraction (str: string): URL[] {
+  return [...extractURLs(str, true) ?? []]
     .map(u => new URL(u))
 };
 
@@ -145,7 +138,7 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
     return undefined
   }
 
-  const urls = await extractURLs(message.content)
+  const urls = doExtraction(message.content)
   if (!urls.length) {
     return undefined
   }
@@ -202,9 +195,12 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
     }
   }
 
-  const radarResults = (await Promise.allSettled(promises))
-    .filter(r => r.status === 'fulfilled')
-    .map(r => r.value)
+  const radarResults = []
+  for (const r of (await Promise.allSettled(promises))) {
+    if (r.status === 'fulfilled') {
+      radarResults.push(r.value)
+    }
+  }
 
   const tripped = radarResults
     .filter(r => r.verdict === DomainVerdict.MALICIOUS)

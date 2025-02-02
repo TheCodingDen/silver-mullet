@@ -2,12 +2,12 @@
   "name": "silver-mullet",
   "version": "1.0.0",
   "description": "The third attempt at making our own automod bot",
-  "main": "lib/index.js",
+  "main": "lib/src/index.js",
   "engines": {
     "node": "18.x"
   },
   "scripts": {
-    "start": "nodemon lib/index.js",
+    "start": "nodemon lib/src/index.js",
     "dev": "concurrently --kill-others --prefix [{name}] --names tsc,cleaner,node \"npm:build:watch\" \"npm:cleaner\" \"npm:start\"",
     "cleaner": "ts-cleaner --dist lib --watch",
     "sync": "slash-up sync",
@@ -21,6 +21,7 @@
     "test:coverage": "npm run test:base -- --config jest.coverage.js",
     "test:coverage:watch": "npm run test:base -- --watchAll --config jest.coverage.js",
     "lint": "eslint . --ext .ts",
+    "task:report": "node lib/tasks/report-scans.js",
     "doc": "typedoc --out docs src",
     "deploy-migrations": "prisma migrate deploy",
     "bootstrap": "docker compose up -d --force-recreate --renew-anon-volumes && POSTGRESQL_URI=postgres://postgres:password@127.0.0.1:5432/silver-mullet wait-for -q --postgresql && npm run deploy-migrations && prisma db execute --file scripts/init-local-dev-db.sql",
@@ -44,7 +45,7 @@
     "didyoumean2": "^5.0.0",
     "discord.js": "^14.11.0",
     "dotenv-safe": "^8.2.0",
-    "get-urls": "^12.1.0",
+    "extract-urls": "^1.4.1",
     "lodash": "^4.17.21",
     "pino": "^8.14.1",
     "pino-pretty": "^10.0.0",
