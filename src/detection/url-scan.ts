@@ -21,9 +21,9 @@ export interface BadLink {
   rawResult: any
 }
 
-async function scanURL (url: URL): Promise<ScanCreateResponse> {
+async function scanURL (url: URL, accountId: string): Promise<ScanCreateResponse> {
   const params = {
-    account_id: accountId(),
+    account_id: accountId,
     url: url.toString()
   }
 
@@ -37,7 +37,7 @@ async function scanURL (url: URL): Promise<ScanCreateResponse> {
       // https://developers.cloudflare.com/security-center/investigate/scan-limits/
       // 1 per 10 seconds
       await sleep(10_000)
-      return await scanURL(url)
+      return await scanURL(url, accountId)
     }
 
     throw err
@@ -46,9 +46,9 @@ async function scanURL (url: URL): Promise<ScanCreateResponse> {
   return res
 }
 
-async function pollForResult (submission: ScanCreateResponse): Promise<BadLink> {
+async function pollForResult (submission: ScanCreateResponse, accountId: string): Promise<BadLink> {
   const params = {
-    account_id: accountId()
+    account_id: accountId
   }
 
   try {
@@ -66,7 +66,7 @@ async function pollForResult (submission: ScanCreateResponse): Promise<BadLink> 
     const err = _err as APIError
     if (err.status === 404) {
       await sleep(5_000)
-      return await pollForResult(submission)
+      return await pollForResult(submission, accountId)
     }
 
     throw err
@@ -118,6 +118,11 @@ async function extractURLs (str: string): Promise<URL[]> {
 };
 
 export async function scanURLs (message: CachedMessage, guild: Guild): Promise<URLDetectionResult | undefined> {
+  const account = accountId()
+  if (!account) {
+    return undefined
+  }
+
   const urls = await extractURLs(message.content)
   if (!urls.length) {
     return undefined
@@ -138,9 +143,9 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
       promises.push(Promise.resolve(existing))
     } else {
       logger.debug(`No match found for ${url}, scanning`)
-      const doScan = scanURL(url).then(async x => {
+      const doScan = scanURL(url, account).then(async x => {
         logger.debug(`Scan started for ${url}`)
-        return await pollForResult(x)
+        return await pollForResult(x, account)
       }).then(x => {
         logger.debug(`Scan finished for URL ${url}, verdict: ${x.verdict}`)
         return x
