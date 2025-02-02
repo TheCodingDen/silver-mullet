@@ -7,6 +7,7 @@ import { APIError } from 'cloudflare'
 import prisma from '../clients/prisma'
 import { DomainVerdict } from '@prisma/client'
 import _ from 'lodash'
+import { errMessage } from '../utils'
 
 const currentlyScanning = new Set<string>()
 
@@ -38,18 +39,18 @@ async function scanURL (url: URL, accountId: string, retries = 10): Promise<Scan
   let res
   try {
     res = await cloudflare.urlScanner.scans.create(params)
-  } catch (_err) {
-    const err = _err as APIError
+  } catch (err) {
     // Recently scanned / backoff
-    if (err.status === 429 || err.status === 409) {
+    if (err instanceof APIError && (err.status === 429 || err.status === 409)) {
       // https://developers.cloudflare.com/security-center/investigate/scan-limits/
       // 1 per 10 seconds
       logger.debug(`Got ${err.status} for URL ${url}, sleeping for 10s`)
       await sleep(10_000)
       return await scanURL(url, accountId, retries - 1)
+    } else {
+      logger.error(`Got unexpected error ${errMessage(err)} on URL ${url}`)
+      throw err
     }
-
-    throw err
   }
 
   return res
@@ -76,15 +77,16 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
       reportURL: res.task.reportURL,
       rawResult: res
     }
-  } catch (_err) {
-    const err = _err as APIError
-    if (err.status === 404) {
+  } catch (err) {
+    if (err instanceof APIError && err.status === 404) {
+      // Recently scanned / backoff
       logger.debug(`URL ${submission.uuid} still in progress, sleeping`)
       await sleep(5_000)
       return await pollForResult(submission, accountId, retries - 1)
+    } else {
+      logger.error(`Got unexpected error ${errMessage(err)} on scan task ${submission.uuid}`)
+      throw err
     }
-
-    throw err
   }
 }
 
