@@ -105,3 +105,7 @@ model Link {
   caughtURL String
   guildID String
 }
+
+model IgnoredDomains {
+  domain  String @id
+}

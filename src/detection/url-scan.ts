@@ -6,6 +6,9 @@ import { ScanCreateResponse } from 'cloudflare/resources/url-scanner/scans'
 import { APIError } from 'cloudflare'
 import prisma from '../clients/prisma'
 import { DomainVerdict } from '@prisma/client'
+import _ from 'lodash'
+
+const currentlyScanning = new Set<string>()
 
 async function sleep (ms: number): Promise<void> {
   return void await new Promise(resolve => setTimeout(resolve, ms))
@@ -21,10 +24,15 @@ export interface BadLink {
   rawResult: any
 }
 
-async function scanURL (url: URL, accountId: string): Promise<ScanCreateResponse> {
+async function scanURL (url: URL, accountId: string, retries = 10): Promise<ScanCreateResponse | undefined> {
   const params = {
     account_id: accountId,
     url: url.toString()
+  }
+
+  if (retries === 0) {
+    logger.info(`Max retries hit for ${url}`)
+    return undefined
   }
 
   let res
@@ -36,8 +44,9 @@ async function scanURL (url: URL, accountId: string): Promise<ScanCreateResponse
     if (err.status === 429 || err.status === 409) {
       // https://developers.cloudflare.com/security-center/investigate/scan-limits/
       // 1 per 10 seconds
+      logger.debug(`Got ${err.status} for URL ${url}, sleeping for 10s`)
       await sleep(10_000)
-      return await scanURL(url, accountId)
+      return await scanURL(url, accountId, retries - 1)
     }
 
     throw err
@@ -46,9 +55,13 @@ async function scanURL (url: URL, accountId: string): Promise<ScanCreateResponse
   return res
 }
 
-async function pollForResult (submission: ScanCreateResponse, accountId: string): Promise<BadLink> {
+async function pollForResult (submission: ScanCreateResponse, accountId: string, retries = 10): Promise<BadLink | undefined> {
   const params = {
     account_id: accountId
+  }
+
+  if (retries === 0) {
+    return undefined
   }
 
   try {
@@ -58,15 +71,17 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string)
       url: res.task.url,
       categories: res.verdicts.overall.categories,
       verdict: res.verdicts.overall.malicious ? DomainVerdict.MALICIOUS : DomainVerdict.BENIGN,
-      redirects: res.lists.urls,
+      // @ts-expect-error CF SDK is missing the `history` property which has our redirect chain
+      redirects: res.page.history?.map(h => h.url) ?? [],
       reportURL: res.task.reportURL,
       rawResult: res
     }
   } catch (_err) {
     const err = _err as APIError
     if (err.status === 404) {
+      logger.debug(`URL ${submission.uuid} still in progress, sleeping`)
       await sleep(5_000)
-      return await pollForResult(submission, accountId)
+      return await pollForResult(submission, accountId, retries - 1)
     }
 
     throw err
@@ -80,7 +95,7 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
   const existing = await prisma.link.findFirst({
     where: {
       AND: {
-        domain: url.hostname,
+        caughtURL: url.toString(),
         guildID: guildId,
         scannedAt: {
           gte: lastYear
@@ -117,6 +132,11 @@ async function extractURLs (str: string): Promise<URL[]> {
     .map(u => new URL(u))
 };
 
+async function filterIgnoredDomains (urls: URL[]): Promise<URL[]> {
+  const all = (await prisma.ignoredDomains.findMany({}))
+  return _.intersectionWith(urls, all, (a, b) => !(_.isEqual(a.hostname, b.domain)))
+}
+
 export async function scanURLs (message: CachedMessage, guild: Guild): Promise<URLDetectionResult | undefined> {
   const account = accountId()
   if (!account) {
@@ -128,11 +148,15 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
     return undefined
   }
 
-  logger.info(`Scanning URLs ${urls}`)
+  logger.info(`Checking urls ${urls.join(', ')}`)
+
+  const filtered = await filterIgnoredDomains(urls)
+
+  logger.info(`Scanning URLs '${filtered.join(', ')}'`)
   const promises = []
   const alreadyExisted = []
 
-  for (const url of urls) {
+  for (const url of filtered) {
     const existing = await getExistingMatch(url, guild.id)
     if (existing) {
       // Don't log rawResult, it's massive
@@ -142,30 +166,46 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
       alreadyExisted.push(existing.domain)
       promises.push(Promise.resolve(existing))
     } else {
+      if (currentlyScanning.has(url.href)) {
+        logger.debug(`Scan already in progress for ${url}, not starting another`)
+        continue
+      }
+
+      currentlyScanning.add(url.href)
       logger.debug(`No match found for ${url}, scanning`)
-      const doScan = scanURL(url, account).then(async x => {
+      const doScan = scanURL(url, account).then(async scan => {
+        if (scan === undefined) {
+          currentlyScanning.delete(url.href)
+          throw new Error(`Could not scan ${url}`)
+        }
+
         logger.debug(`Scan started for ${url}`)
-        return await pollForResult(x, account)
-      }).then(x => {
-        logger.debug(`Scan finished for URL ${url}, verdict: ${x.verdict}`)
-        return x
+        return await pollForResult(scan, account)
+      }).then(result => {
+        currentlyScanning.delete(url.href)
+
+        if (result === undefined) {
+          throw new Error(`Could not get result ${url}`)
+        }
+
+        logger.debug(`Scan finished for URL ${url}, verdict: ${result.verdict}`)
+        return result
       })
+
       promises.push(doScan)
     }
   }
 
-  const radarResults = (await Promise.all(promises))
+  const radarResults = (await Promise.allSettled(promises))
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value)
 
   const tripped = radarResults
     .filter(r => {
       return r.verdict === DomainVerdict.MALICIOUS
     })
 
-  for (const link of tripped) {
-    if (link.verdict === DomainVerdict.BENIGN) {
-      continue
-    }
-
+  for (const link of radarResults) {
     if (alreadyExisted.includes(link.domain)) {
       continue
     }
@@ -179,7 +219,7 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
         reportURL: link.reportURL,
         rawResult: link.rawResult,
         redirects: link.redirects,
-        verdict: DomainVerdict.MALICIOUS
+        verdict: link.verdict
       }
     })
   }

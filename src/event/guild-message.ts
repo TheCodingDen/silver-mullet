@@ -77,7 +77,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
   // IMPORTANT: Run this concurrently
   void scanURLs(messageToCache, message.guild).then(urlResult => {
     if (urlResult) {
-      logger.info(`Got a hit on URLs ${urlResult.trippedURLs}`)
+      logger.info(`Got a hit on URLs ${urlResult.trippedURLs.map(url => url.url).join(', ')}`)
       void actionURLHit(urlResult, member)
     }
   })
