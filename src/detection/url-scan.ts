@@ -6,9 +6,9 @@ import { ScanCreateResponse } from 'cloudflare/resources/url-scanner/scans'
 import { APIError } from 'cloudflare'
 import prisma from '../clients/prisma'
 import { AntiSpamAction, DomainVerdict } from '@prisma/client'
-import _ from 'lodash'
 import { errMessage } from '../utils'
 import extractURLs from 'extract-urls'
+import wcmatch from 'wildcard-match'
 
 const currentlyScanning = new Set<string>()
 
@@ -127,9 +127,32 @@ function doExtraction (str: string): URL[] {
     .map(u => new URL(u))
 };
 
+function shouldIgnoreDomain (storedDomain: string, incomingURL: URL): boolean {
+  const shouldIgnoreDomain = wcmatch(storedDomain)
+  return shouldIgnoreDomain(incomingURL.hostname)
+}
+
 async function filterIgnoredDomains (urls: URL[]): Promise<URL[]> {
   const all = (await prisma.ignoredDomains.findMany({}))
-  return _.intersectionWith(urls, all, (a, b) => !(_.isEqual(a.hostname, b.domain)))
+  const out = []
+  for (const url of urls) {
+    // Test all ignored domains to start
+    let matched = false
+
+    for (const test of all) {
+      if (shouldIgnoreDomain(test.domain, url)) {
+        matched = true
+        break
+      }
+    }
+
+    // And if any of them matched, don't push it
+    if (!matched) {
+      out.push(url)
+    }
+  }
+
+  return out
 }
 
 export async function scanURLs (message: CachedMessage, guild: Guild): Promise<URLDetectionResult | undefined> {
