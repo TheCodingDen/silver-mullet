@@ -8,7 +8,8 @@ import { channelLink, embedBase } from '../utils/discordUtils'
 import { RetryResult } from '../utils/retry'
 import { ActionFunction, TriggeringMessage } from '../actions'
 import { Comparison } from './spam-detection'
-import { DetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
+import { DetectionResult, URLDetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
+import { BadLink } from './url-scan'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
@@ -178,6 +179,37 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
   }
 }
 
+function makeURLDefaultEmbed (message: TriggeringMessage, result: URLDetectionResult): APIEmbed {
+  const showURL = (url: BadLink): string => {
+    const categories = url.categories.map(c => `**${c}**`).join(', ')
+    const urls = url.redirects.map(u => `- ${u}`).join('\n') || '[No redirects known]'
+    const reportURL = `[View full report on Cloudflare Radar](${url.reportURL})`
+
+    return `Final destination: ${url.url}\nCategories: ${categories}\n\nRedirect chain:\n${urls}\n\n${reportURL}`
+  }
+
+  return {
+    ...embedBase(),
+    title: 'Malicious URL detected',
+    color: color.red,
+    author: {
+      name: `@${message.author.user.username} (${message.author.id})`,
+      icon_url: message.author.displayAvatarURL()
+    },
+    description: `
+          **Triggered in** (${channelLink(message.channel.id)}):
+          \`\`\`
+${message.content.trimStart().trimEnd() || '<no-content>'}
+          \`\`\` 
+          **Action taken**:
+          \`${result.action}\`
+
+          **Scanned URLs**:
+${result.trippedURLs.map(showURL).join('\n\n').trimStart().trimEnd()}
+        `
+  }
+}
+
 function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetectionResult): APIEmbed {
   const { action, trippedFilter } = result
   return {
@@ -205,8 +237,10 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
 export function makeDefaultEmbed (message: TriggeringMessage, result: DetectionResult): APIEmbed {
   if (result.source === DetectionSource.SPAM) {
     return makeSpamDefaultEmbed(message, result)
-  } else {
+  } else if (result.source === DetectionSource.FILTER) {
     return makeFilterDefaultEmbed(message, result)
+  } else {
+    return makeURLDefaultEmbed(message, result)
   }
 }
 

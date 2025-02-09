@@ -81,9 +81,31 @@ model PointOverride {
 }
 
 model Filter {
-  id      String @id @default(cuid())
+  id      String         @id @default(cuid())
   guildID String
   regex   String
   action  AntiSpamAction @default(BAN)
-  flags   String @default("g")
+  flags   String         @default("g")
+}
+
+enum DomainVerdict {
+  MALICIOUS
+  BENIGN
+}
+
+model Link {
+  id      String        @id @default(cuid())
+  scannedAt DateTime @default(now())
+  rawResult Json
+  verdict DomainVerdict
+  categories String[]
+  redirects String[]
+  reportURL String
+  domain  String
+  caughtURL String
+  guildID String
+}
+
+model IgnoredDomains {
+  domain  String @id
 }

@@ -2,7 +2,11 @@
 
 // Env
 import dotenv from 'dotenv-safe'
-dotenv.config()
+dotenv.config({
+  // dotenv can distinguish between empty and unset
+  // empty is ok, we will use it to denote disabled features
+  allowEmptyValues: true
+})
 
 // Logger
 import logger from './utils/logger'
