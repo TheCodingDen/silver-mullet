@@ -26,7 +26,7 @@ function makeEmbed (links: Link[]): APIEmbed {
   return {
     ...embedBase(),
     description: `
-**Report for today**:
+**Domains seen today**:
 
 **MALICIOUS:**
 ${formatCollection(malicious) || 'None'}  

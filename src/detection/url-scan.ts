@@ -166,7 +166,7 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
     return undefined
   }
 
-  logger.info(`Checking urls ${urls.join(', ')}`)
+  logger.info(`Checking urls '${urls.join(', ')}'`)
 
   const filtered = await filterIgnoredDomains(urls)
 
@@ -180,7 +180,7 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
       // Don't log rawResult, it's massive
       const { rawResult: _, ...rest } = existing
 
-      logger.debug(`Found existing scan match: ${JSON.stringify(rest)}`)
+      logger.debug(`Found existing scan: ${JSON.stringify(rest)}`)
       alreadyExisted.push(existing.domain)
       promises.push(Promise.resolve(existing))
     } else {
@@ -190,7 +190,7 @@ export async function scanURLs (message: CachedMessage, guild: Guild): Promise<U
       }
 
       currentlyScanning.add(url.href)
-      logger.debug(`No match found for ${url}, scanning`)
+      logger.debug(`No scan found for ${url}, scanning`)
       const doScan = scanURL(url, account).then(async scan => {
         // scan will be undefined if the scan could not be created.
         // this could be an intermitent failure, or a retry timeout
