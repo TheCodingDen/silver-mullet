@@ -33,7 +33,7 @@ async function scanURL (url: URL, accountId: string, retries = 10): Promise<Scan
   }
 
   if (retries === 0) {
-    logger.info(`Max retries hit for ${url}`)
+    logger.info(`Max retries hit for ${url} when trying to initiate scan`)
     return undefined
   }
 
@@ -63,6 +63,7 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
   }
 
   if (retries === 0) {
+    logger.debug(`Giving up on scan ${submission.uuid}, no more retries available`)
     return undefined
   }
 
@@ -82,7 +83,7 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
     if (err instanceof APIError && err.status === 404) {
       // Recently scanned / backoff
       logger.debug(`URL ${submission.uuid} still in progress, sleeping`)
-      await sleep(5_000)
+      await sleep(10_000)
       return await pollForResult(submission, accountId, retries - 1)
     } else {
       logger.error(`Got unexpected error ${errMessage(err)} on scan task ${submission.uuid}`)
