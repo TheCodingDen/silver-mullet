@@ -73,7 +73,7 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
     const redirects: string[] = res.page.history?.map(h => h.url) ?? []
     return {
       domain: res.task.domain,
-      url: redirects[0] ?? res.task.url,
+      url: redirects[redirects.length - 1] ?? res.task.url,
       categories: res.verdicts.overall.categories,
       verdict: res.verdicts.overall.malicious ? DomainVerdict.MALICIOUS : DomainVerdict.BENIGN,
       redirects,
