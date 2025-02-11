@@ -45,7 +45,7 @@ export default class DomainCommand extends SlashCommand {
   }
 
   async run (ctx: CommandContext): Promise<void> {
-    await handleCommand(this, ctx, [PermissionGroup.INFRA_ADMIN], {
+    await handleCommand(this, ctx, [PermissionGroup.ADMIN], {
       ignore: {
         [run]: this.ignore.bind(this)
       },
