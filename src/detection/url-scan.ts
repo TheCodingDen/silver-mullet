@@ -71,7 +71,6 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
     const res = await cloudflare.urlScanner.scans.get(submission.uuid, params)
     // @ts-expect-error CF SDK is missing the `history` property which has our redirect chain
     const redirects: string[] = res.page.history?.map(h => h.url) ?? []
-    
     return {
       domain: res.task.domain,
       url: redirects[0] ?? res.task.url,
