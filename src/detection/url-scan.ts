@@ -124,7 +124,7 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
 }
 
 function doExtraction (str: string): URL[] {
-  return [...extractURLs(str, true) ?? []]
+  return [...extractURLs(str, false) ?? []]
     .map(u => new URL(u))
 };
 
