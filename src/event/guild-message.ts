@@ -74,7 +74,6 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  
   // IMPORTANT: Run this concurrently
   void scanURLs(messageToCache, message.guild).then(urlResult => {
     if (urlResult) {
