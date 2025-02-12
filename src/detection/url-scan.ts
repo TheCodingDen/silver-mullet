@@ -9,6 +9,7 @@ import { AntiSpamAction, DomainVerdict } from '@prisma/client'
 import { errMessage } from '../utils'
 import extractURLs from 'extract-urls'
 import wcmatch from 'wildcard-match'
+import _ from 'lodash'
 
 const currentlyScanning = new Set<string>()
 
@@ -33,7 +34,7 @@ async function scanURL (url: URL, accountId: string, retries = 10): Promise<Scan
   }
 
   if (retries === 0) {
-    logger.info(`Max retries hit for ${url}`)
+    logger.info(`Max retries hit for ${url} when trying to initiate scan`)
     return undefined
   }
 
@@ -63,18 +64,20 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
   }
 
   if (retries === 0) {
+    logger.debug(`Giving up on scan ${submission.uuid}, no more retries available`)
     return undefined
   }
 
   try {
     const res = await cloudflare.urlScanner.scans.get(submission.uuid, params)
+    // @ts-expect-error CF SDK is missing the `history` property which has our redirect chain
+    const redirects: string[] = res.page.history?.map(h => h.url) ?? []
     return {
       domain: res.task.domain,
-      url: res.task.url,
+      url: _.last(redirects) ?? res.task.url,
       categories: res.verdicts.overall.categories,
       verdict: res.verdicts.overall.malicious ? DomainVerdict.MALICIOUS : DomainVerdict.BENIGN,
-      // @ts-expect-error CF SDK is missing the `history` property which has our redirect chain
-      redirects: res.page.history?.map(h => h.url) ?? [],
+      redirects,
       reportURL: res.task.reportURL,
       rawResult: res
     }
@@ -82,7 +85,7 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
     if (err instanceof APIError && err.status === 404) {
       // Recently scanned / backoff
       logger.debug(`URL ${submission.uuid} still in progress, sleeping`)
-      await sleep(5_000)
+      await sleep(10_000)
       return await pollForResult(submission, accountId, retries - 1)
     } else {
       logger.error(`Got unexpected error ${errMessage(err)} on scan task ${submission.uuid}`)
@@ -123,7 +126,7 @@ async function getExistingMatch (url: URL, guildId: string): Promise<BadLink | u
 }
 
 function doExtraction (str: string): URL[] {
-  return [...extractURLs(str, true) ?? []]
+  return [...extractURLs(str, false) ?? []]
     .map(u => new URL(u))
 };
 
