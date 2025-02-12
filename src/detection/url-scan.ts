@@ -9,6 +9,7 @@ import { AntiSpamAction, DomainVerdict } from '@prisma/client'
 import { errMessage } from '../utils'
 import extractURLs from 'extract-urls'
 import wcmatch from 'wildcard-match'
+import _ from 'lodash'
 
 const currentlyScanning = new Set<string>()
 
@@ -73,7 +74,7 @@ async function pollForResult (submission: ScanCreateResponse, accountId: string,
     const redirects: string[] = res.page.history?.map(h => h.url) ?? []
     return {
       domain: res.task.domain,
-      url: redirects[redirects.length - 1] ?? res.task.url,
+      url: _.last(redirects) ?? res.task.url,
       categories: res.verdicts.overall.categories,
       verdict: res.verdicts.overall.malicious ? DomainVerdict.MALICIOUS : DomainVerdict.BENIGN,
       redirects,
