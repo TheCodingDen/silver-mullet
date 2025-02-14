@@ -5,7 +5,7 @@ import { APIEmbed } from 'discord.js'
 import { embedBase } from '../src/utils/discordUtils'
 import _ from 'lodash'
 
-import logger from './utils/logger'
+import logger from '../src/utils/logger'
 global.logger = logger
 
 function makeEmbed (links: Link[]): APIEmbed {
