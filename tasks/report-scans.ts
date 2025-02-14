@@ -5,6 +5,9 @@ import { APIEmbed } from 'discord.js'
 import { embedBase } from '../src/utils/discordUtils'
 import _ from 'lodash'
 
+import logger from './utils/logger'
+global.logger = logger
+
 function makeEmbed (links: Link[]): APIEmbed {
   const groups = _.groupBy(links, l => l.verdict)
   const benign = _.groupBy(groups[DomainVerdict.BENIGN], l => l.domain)
@@ -77,4 +80,4 @@ async function runReport (): Promise<void> {
   await prisma.$disconnect()
 }
 
-runReport().catch(console.error)
+runReport().catch(err => logger.error(err))
