@@ -9,6 +9,7 @@ import Nilsimsa from '../vendor/nilsimsa'
 import { retryCallback } from '../utils/retry'
 import { executeFilterDetection } from '../detection/filter-detection'
 import { CachedMessage } from '../clients/redis'
+import { trackSentMessage } from '../tracking/last-message'
 
 const IGNORED_TYPES: MessageType[] = [
   // Ignore "system automod logs" because they cause confusing events to get sent to us
@@ -73,6 +74,8 @@ export async function onGuildMessage (message: Message): Promise<void> {
     content: message.content,
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
+
+  await trackSentMessage(messageToCache)
 
   // IMPORTANT: Run this concurrently
   void scanURLs(messageToCache, message.guild).then(urlResult => {

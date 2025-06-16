@@ -106,6 +106,13 @@ model Link {
   guildID String
 }
 
+model LastSeen {
+  userId String @id
+
+  lastMessageId String
+  lastMessageDate DateTime
+}
+
 model IgnoredDomains {
   domain  String @id
 }
