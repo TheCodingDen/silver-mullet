@@ -74,7 +74,6 @@ export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
         await queueMessage.edit({
           embeds: [{
             ...makeDefaultEmbed(message, result),
-            title: 'Suspicious activity detected',
             color: color.yellow
           }],
           components: [makeComponents({
@@ -94,7 +93,6 @@ export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
     const queueMessage = await queueChannel.send({
       embeds: [{
         ...makeDefaultEmbed(message, result),
-        title: 'Suspicious activity detected',
         color: color.yellow
       }],
       components: [makeComponents({
@@ -190,7 +188,7 @@ function makeReactivationDefaultEmbed (message: TriggeringMessage, result: React
     },
     description: `
           **Joined**: ${message.author.joinedAt?.toLocaleString()}
-          **Last seen**: ${result.lastSeen?.lastMessageDate.toLocaleString()}
+          **Last seen**: ${result.lastSeen?.lastMessageDate.toLocaleString() ?? 'none'}
     
           **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`

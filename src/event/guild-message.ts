@@ -1,4 +1,4 @@
-import { GuildMember, Message, MessageType } from 'discord.js'
+import { Message, MessageType } from 'discord.js'
 import { addMessage, fetchMessagesByAuthor } from '../cache/op'
 import prisma from '../clients/prisma'
 import { actionFilterHit, actionURLHit, actions } from '../actions/'
@@ -10,7 +10,6 @@ import { retryCallback } from '../utils/retry'
 import { executeFilterDetection } from '../detection/filter-detection'
 import { CachedMessage } from '../clients/redis'
 import { trackSentMessage } from '../tracking/last-message'
-import { AntiSpamAction } from '@prisma/client'
 
 const IGNORED_TYPES: MessageType[] = [
   // Ignore "system automod logs" because they cause confusing events to get sent to us
@@ -20,62 +19,6 @@ const IGNORED_TYPES: MessageType[] = [
 
 // Store currently executing actions per user, so that we get order between actions as to avoid collision
 const actionPromises = new Map<string, Promise<unknown>>()
-
-const ALL_URL_REGEX = /https:\/\/[\S\s]/
-
-async function checkSuspiciousReactivation (member: GuildMember, message: Message<true>, messageToCache: CachedMessage): Promise<boolean> {
-  const lastSeen = await prisma.lastSeen.findUnique({
-    where: {
-      userId: message.author.id
-    }
-  })
-
-  const oneMonthAgo = new Date()
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
-  // Zero out all the other parts of the date other than d,m,y
-  oneMonthAgo.setHours(0, 0, 0, 0)
-
-  const isOver1MonthOld = lastSeen === null || (lastSeen.lastMessageDate < oneMonthAgo)
-  logger.debug(`Last seen for ${message.author.id} is ${JSON.stringify(lastSeen)}`)
-
-  const regexMatch = ALL_URL_REGEX.test(message.content)
-
-  // Current criteria for ban:
-  // 1) Last seen over a month ago
-  // 2) Their message contains a URL
-  if (isOver1MonthOld && regexMatch) {
-    logger.info(`Reactivation hit for ${message.author.id}, queuing up the ban and removing their message`)
-    const hit = {
-      source: 'reactivation' as const,
-      member,
-      action: AntiSpamAction.QUEUE_BAN,
-      guild: message.guild,
-      message: messageToCache,
-      lastSeen
-    }
-
-    await actions.QUEUE_BAN(member, {
-      author: member,
-      content: message.content,
-      guild: message.guild,
-      channel: message.channel
-    }, hit)
-
-    await retryCallback(async () => {
-      await message.delete()
-    }, { attempts: 3 })
-
-    return true
-  } else {
-    logger.debug(`No reactivation hit for ${message.author.id}: 1mo?: ${isOver1MonthOld}; regex?: ${regexMatch}`)
-
-    // Only track them if they aren't currently hitting the filter. This will allow them to hit it repeatedly
-    // instead of hitting it once, getting tracked, and then not hitting it again.
-    await trackSentMessage(messageToCache)
-  }
-
-  return false
-}
 
 export async function onGuildMessage (message: Message): Promise<void> {
   if (message.author.bot || message.channel.isDMBased() || !message.inGuild()) {
@@ -132,11 +75,6 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  const didBan = await checkSuspiciousReactivation(member, message, messageToCache)
-  if (didBan) {
-    return
-  }
-
   // IMPORTANT: Run this concurrently
   void scanURLs(messageToCache, message.guild).then(urlResult => {
     if (urlResult) {
@@ -145,15 +83,18 @@ export async function onGuildMessage (message: Message): Promise<void> {
     }
   })
 
-  const filterResult = await executeFilterDetection(messageToCache, message.guild)
+  const filterResult = await executeFilterDetection(messageToCache, member, message.guild)
   if (filterResult) {
     const actionResult = await actionFilterHit(filterResult, member)
     if (actionResult.success) {
+      await trackSentMessage(messageToCache)
       return
     }
 
     // Otherwise, if we could not action due to error, continue on to other filtering
   }
+
+  await trackSentMessage(messageToCache)
 
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     orderBy: {

@@ -81,11 +81,12 @@ model PointOverride {
 }
 
 model Filter {
-  id      String         @id @default(cuid())
-  guildID String
-  regex   String
-  action  AntiSpamAction @default(BAN)
-  flags   String         @default("g")
+  id           String         @id @default(cuid())
+  guildID      String
+  regex        String
+  action       AntiSpamAction @default(BAN)
+  flags        String         @default("g")
+  dayThreshold Int            @default(0)
 }
 
 enum DomainVerdict {
@@ -94,25 +95,25 @@ enum DomainVerdict {
 }
 
 model Link {
-  id      String        @id @default(cuid())
-  scannedAt DateTime @default(now())
-  rawResult Json
-  verdict DomainVerdict
+  id         String        @id @default(cuid())
+  scannedAt  DateTime      @default(now())
+  rawResult  Json
+  verdict    DomainVerdict
   categories String[]
-  redirects String[]
-  reportURL String
-  domain  String
-  caughtURL String
-  guildID String
+  redirects  String[]
+  reportURL  String
+  domain     String
+  caughtURL  String
+  guildID    String
 }
 
 model LastSeen {
   userId String @id
 
-  lastMessageId String
+  lastMessageId   String
   lastMessageDate DateTime
 }
 
 model IgnoredDomains {
-  domain  String @id
+  domain String @id
 }

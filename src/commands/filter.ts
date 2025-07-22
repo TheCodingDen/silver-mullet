@@ -52,6 +52,12 @@ export default class FilterCommand extends SlashCommand {
               required: true
             },
             {
+              type: CommandOptionType.NUMBER,
+              name: 'last-message',
+              description: 'Check if the author sent a message in the last n days. The regex must also match.',
+              required: false
+            },
+            {
               type: CommandOptionType.STRING,
               name: 'flags',
               description: 'The flags to use. Defaults to "g", "i" is always enabled. Pass "none" to have no flags.',
@@ -140,10 +146,11 @@ export default class FilterCommand extends SlashCommand {
 
   private async add (ctx: GuildCommandContext): Promise<void> {
     const { options } = ctx
-    let { regex: rawRegex, flags, action } = options.add as {
+    let { regex: rawRegex, flags, action, 'last-message': lastMessage } = options.add as {
       regex: string
       action: AntiSpamAction
       flags: string
+      'last-message': number | undefined
     }
 
     if (flags === 'none') {
@@ -165,12 +172,13 @@ export default class FilterCommand extends SlashCommand {
           regex: regex.source,
           guildID: ctx.guildID,
           flags,
+          dayThreshold: lastMessage ?? 0,
           action
         }
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit`
+        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit (after ${lastMessage} days)`
       )
       await sendSuccess(
         `Added filter \`/${regex.source}/${newFlags}\`.`,
