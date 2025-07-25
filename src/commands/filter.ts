@@ -55,7 +55,9 @@ export default class FilterCommand extends SlashCommand {
               type: CommandOptionType.NUMBER,
               name: 'last-message',
               description: 'Check if the author sent a message in the last n days. The regex must also match.',
-              required: false
+              required: false,
+              min_value: 1,
+              max_value: 365
             },
             {
               type: CommandOptionType.STRING,
