@@ -36,7 +36,14 @@ export async function executeFilterDetection (message: CachedMessage, author: Gu
         const threshold = new Date()
         threshold.setDate(threshold.getDate() - filter.dayThreshold)
 
-        const isOverThreshold = lastSeen === null || (lastSeen.lastMessageDate < threshold)
+        const lastSeenDate = lastSeen?.lastMessageDate ?? author.joinedAt
+
+        if (!lastSeenDate) {
+          logger.warn(`No last seen date found for user ${author.id} (joined at ${author?.joinedAt}, last message date ${lastSeen?.lastMessageDate})`)
+          return
+        }
+
+        const isOverThreshold = lastSeenDate < threshold
         logger.debug(`Last seen for ${author.id} is ${JSON.stringify(lastSeen)}`)
 
         if (isOverThreshold) {
