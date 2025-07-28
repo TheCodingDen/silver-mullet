@@ -139,7 +139,7 @@ export default class FilterCommand extends SlashCommand {
       await ctx.send('No filters have been set.')
     } else {
       const content = allFilters
-        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action} with a ${f.dayThreshold} day threshold`)
+        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
         .join('\n') || 'No filters set.'
 
       await ctx.send(content)
@@ -180,10 +180,10 @@ export default class FilterCommand extends SlashCommand {
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit (after ${lastMessage} days)`
+        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit${lastMessage ? ` (provided user did not send a message in the last ${lastMessage} days)` : ''}`
       )
       await sendSuccess(
-        `Added filter \`/${regex.source}/${newFlags}\` (${lastMessage} day threshold).`,
+        `Added filter \`/${regex.source}/${newFlags}\`${lastMessage ? `, which will trigger if user has sent no messages in the last ${lastMessage} days` : ''}.`,
         ctx
       )
     } catch (err) {
