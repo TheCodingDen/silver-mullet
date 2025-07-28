@@ -139,7 +139,7 @@ export default class FilterCommand extends SlashCommand {
       await ctx.send('No filters have been set.')
     } else {
       const content = allFilters
-        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}`)
+        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action} with a ${f.dayThreshold} day threshold`)
         .join('\n') || 'No filters set.'
 
       await ctx.send(content)
@@ -183,7 +183,7 @@ export default class FilterCommand extends SlashCommand {
         `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit (after ${lastMessage} days)`
       )
       await sendSuccess(
-        `Added filter \`/${regex.source}/${newFlags}\`.`,
+        `Added filter \`/${regex.source}/${newFlags}\` (${lastMessage} day threshold).`,
         ctx
       )
     } catch (err) {
