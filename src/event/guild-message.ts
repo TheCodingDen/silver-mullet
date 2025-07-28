@@ -75,8 +75,6 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  await trackSentMessage(messageToCache)
-
   // IMPORTANT: Run this concurrently
   void scanURLs(messageToCache, message.guild).then(urlResult => {
     if (urlResult) {
@@ -85,15 +83,18 @@ export async function onGuildMessage (message: Message): Promise<void> {
     }
   })
 
-  const filterResult = await executeFilterDetection(messageToCache, message.guild)
+  const filterResult = await executeFilterDetection(messageToCache, member, message.guild)
   if (filterResult) {
     const actionResult = await actionFilterHit(filterResult, member)
     if (actionResult.success) {
+      await trackSentMessage(messageToCache)
       return
     }
 
     // Otherwise, if we could not action due to error, continue on to other filtering
   }
+
+  await trackSentMessage(messageToCache)
 
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     orderBy: {

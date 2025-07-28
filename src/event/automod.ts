@@ -88,7 +88,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     }
   })
 
-  const filterResult = await executeFilterDetection(messageToCache, guild)
+  const filterResult = await executeFilterDetection(messageToCache, member, guild)
   if (filterResult) {
     logger.debug(`User ${user.id} hit filter ${JSON.stringify(filterResult, undefined, 2)}`)
     const actionResult = await actionFilterHit(filterResult, member)

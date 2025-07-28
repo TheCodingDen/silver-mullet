@@ -8,7 +8,7 @@ import { channelLink, embedBase } from '../utils/discordUtils'
 import { RetryResult } from '../utils/retry'
 import { ActionFunction, TriggeringMessage } from '../actions'
 import { Comparison } from './spam-detection'
-import { DetectionResult, URLDetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult } from './types'
+import { DetectionResult, URLDetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult, ReactivationDetectionResult } from './types'
 import { BadLink } from './url-scan'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
@@ -74,7 +74,6 @@ export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
         await queueMessage.edit({
           embeds: [{
             ...makeDefaultEmbed(message, result),
-            title: 'Suspicious activity detected',
             color: color.yellow
           }],
           components: [makeComponents({
@@ -94,7 +93,6 @@ export function makeQueueCallback (action: ActionUpgrade): ActionFunction {
     const queueMessage = await queueChannel.send({
       embeds: [{
         ...makeDefaultEmbed(message, result),
-        title: 'Suspicious activity detected',
         color: color.yellow
       }],
       components: [makeComponents({
@@ -179,6 +177,29 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
   }
 }
 
+function makeReactivationDefaultEmbed (message: TriggeringMessage, result: ReactivationDetectionResult): APIEmbed {
+  return {
+    ...embedBase(),
+    title: 'Suspicious reactivation detected',
+    color: color.red,
+    author: {
+      name: `@${message.author.user.username} (${message.author.id})`,
+      icon_url: message.author.displayAvatarURL()
+    },
+    description: `
+          **Joined**: ${message.author.joinedAt?.toLocaleString()}
+          **Last seen**: ${result.lastSeen?.lastMessageDate.toLocaleString() ?? 'none'}
+    
+          **Triggered in** (${channelLink(message.channel.id)}):
+          \`\`\`
+${message.content.trimStart().trimEnd() || '<no-content>'}
+          \`\`\`
+          **Action taken**:
+          \`${result.action}\`
+        `
+  }
+}
+
 function makeURLDefaultEmbed (message: TriggeringMessage, result: URLDetectionResult): APIEmbed {
   const showURL = (url: BadLink): string => {
     const categories = url.categories.map(c => `**${c}**`).join(', ')
@@ -239,6 +260,8 @@ export function makeDefaultEmbed (message: TriggeringMessage, result: DetectionR
     return makeSpamDefaultEmbed(message, result)
   } else if (result.source === DetectionSource.FILTER) {
     return makeFilterDefaultEmbed(message, result)
+  } else if (result.source === DetectionSource.REACTIVATION) {
+    return makeReactivationDefaultEmbed(message, result)
   } else {
     return makeURLDefaultEmbed(message, result)
   }

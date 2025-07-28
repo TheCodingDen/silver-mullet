@@ -51,7 +51,7 @@ export function initActionComponents (creator: SlashCreator): void {
       }
     } else {
       const result = await retryCallback(async () => await messageUser(author.user, {
-        content: `Moderator confirmed ${upgradeTo} from ${author.guild.name} due to spam.`
+        content: `You would have been upgraded to ${upgradeTo} from ${author.guild.name} due to spam.`
       }), {
         attempts: 1
       })

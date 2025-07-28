@@ -52,6 +52,14 @@ export default class FilterCommand extends SlashCommand {
               required: true
             },
             {
+              type: CommandOptionType.NUMBER,
+              name: 'last-message',
+              description: 'Check if the author sent a message in the last n days. The regex must also match.',
+              required: false,
+              min_value: 1,
+              max_value: 365
+            },
+            {
               type: CommandOptionType.STRING,
               name: 'flags',
               description: 'The flags to use. Defaults to "g", "i" is always enabled. Pass "none" to have no flags.',
@@ -131,7 +139,7 @@ export default class FilterCommand extends SlashCommand {
       await ctx.send('No filters have been set.')
     } else {
       const content = allFilters
-        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}`)
+        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
         .join('\n') || 'No filters set.'
 
       await ctx.send(content)
@@ -140,10 +148,11 @@ export default class FilterCommand extends SlashCommand {
 
   private async add (ctx: GuildCommandContext): Promise<void> {
     const { options } = ctx
-    let { regex: rawRegex, flags, action } = options.add as {
+    let { regex: rawRegex, flags, action, 'last-message': lastMessage } = options.add as {
       regex: string
       action: AntiSpamAction
       flags: string
+      'last-message': number | undefined
     }
 
     if (flags === 'none') {
@@ -165,15 +174,16 @@ export default class FilterCommand extends SlashCommand {
           regex: regex.source,
           guildID: ctx.guildID,
           flags,
+          dayThreshold: lastMessage ?? 0,
           action
         }
       })
 
       logger.info(
-        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit`
+        `${ctx.user.username} added filter /${regex.source}/${newFlags} which will ${action} when it is hit${lastMessage ? ` (provided user did not send a message in the last ${lastMessage} days)` : ''}`
       )
       await sendSuccess(
-        `Added filter \`/${regex.source}/${newFlags}\`.`,
+        `Added filter \`/${regex.source}/${newFlags}\`${lastMessage ? `, which will trigger if user has sent no messages in the last ${lastMessage} days` : ''}.`,
         ctx
       )
     } catch (err) {

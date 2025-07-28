@@ -1,13 +1,13 @@
 import { ChannelType, GuildMember } from 'discord.js'
 import { errMessage, errStack } from '../utils'
 import { TriggeringMessage, actions } from '.'
-import { DetectionResult, FilterDetectionResult } from '../detection/types'
+import { FilterDetectionResult, ReactivationDetectionResult } from '../detection/types'
 
 export interface FilterActionResult {
   success: boolean
 }
 
-export async function actionFilterHit (hit: FilterDetectionResult, member: GuildMember): Promise<FilterActionResult> {
+export async function actionFilterHit (hit: FilterDetectionResult | ReactivationDetectionResult, member: GuildMember): Promise<FilterActionResult> {
   const channel = await hit.guild.channels.fetch(hit.message.channelId)
   if (!channel) {
     logger.error(`Could not locate channel ${hit.message.channelId}`)
@@ -29,18 +29,11 @@ export async function actionFilterHit (hit: FilterDetectionResult, member: Guild
     guild: member.guild
   }
 
-  const result: DetectionResult = {
-    source: 'filter',
-    action: hit.action,
-    trippedFilter: hit.trippedFilter,
-    author: member,
-    message: hit.message,
-    guild: member.guild
-  }
+  const actionToTake = hit.source === 'filter' ? hit.trippedFilter.action : hit.action
+  const action = actions[actionToTake]
 
-  const action = actions[hit.trippedFilter.action]
   try {
-    await action(member, message, result)
+    await action(member, message, hit)
   } catch (err) {
     logger.error(`Failed to action filter: ${errMessage(err)}\n${errStack(err)}`)
 

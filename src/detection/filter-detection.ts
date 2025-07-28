@@ -1,10 +1,10 @@
 import prisma from '../clients/prisma'
 import decancer from 'decancer'
 import { CachedMessage } from '../clients/redis'
-import { Guild } from 'discord.js'
-import { FilterDetectionResult } from './types'
+import { Guild, GuildMember } from 'discord.js'
+import { FilterDetectionResult, ReactivationDetectionResult } from './types'
 
-export async function executeFilterDetection (message: CachedMessage, guild: Guild): Promise<FilterDetectionResult | undefined> {
+export async function executeFilterDetection (message: CachedMessage, author: GuildMember, guild: Guild): Promise<FilterDetectionResult | ReactivationDetectionResult | undefined> {
   const filters = await prisma.filter.findMany({
     where: {
       guildID: guild.id
@@ -18,20 +18,56 @@ export async function executeFilterDetection (message: CachedMessage, guild: Gui
 
   const content = decancer(message.content).toString()
 
-  const matchedFilter = filters.find(f => {
-    const regexp = new RegExp(f.regex, f.flags)
-    return regexp.test(content)
-  })
+  for (const filter of filters) {
+    const regexp = new RegExp(filter.regex, filter.flags)
+    const regexMatch = regexp.test(content)
 
-  if (matchedFilter) {
-    const author = await guild.members.fetch(message.authorId)
-    return {
-      source: 'filter',
-      action: matchedFilter.action,
-      trippedFilter: matchedFilter,
-      message,
-      guild,
-      author
+    logger.debug(`Regex match ${regexMatch} ${filter.regex}`)
+
+    if (regexMatch) {
+      // This is a reactivation filter
+      if (filter.dayThreshold !== 0) {
+        const lastSeen = await prisma.lastSeen.findUnique({
+          where: {
+            userId: author.id
+          }
+        })
+
+        const threshold = new Date()
+        threshold.setDate(threshold.getDate() - filter.dayThreshold)
+
+        const lastSeenDate = lastSeen?.lastMessageDate ?? author.joinedAt
+
+        if (!lastSeenDate) {
+          logger.warn(`No last seen date found for user ${author.id} (joined at ${author?.joinedAt}, last message date ${lastSeen?.lastMessageDate})`)
+          return
+        }
+
+        const isOverThreshold = lastSeenDate < threshold
+        logger.debug(`Last seen for ${author.id} is ${JSON.stringify(lastSeen)}`)
+
+        if (isOverThreshold) {
+          return {
+            source: 'reactivation' as const,
+            member: author,
+            action: filter.action,
+            guild,
+            message,
+            lastSeen
+          }
+        } else {
+          logger.debug(`User ${author.id} failed reactivation. thresholdDate: ${threshold.toLocaleString()}, thresholdDays: ${filter.dayThreshold}`)
+        }
+      } else {
+        return {
+          source: 'filter',
+          action: filter.action,
+          trippedFilter: filter,
+          message,
+          guild,
+          author
+        }
+      }
     }
   }
 }
