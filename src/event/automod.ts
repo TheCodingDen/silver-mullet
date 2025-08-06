@@ -78,8 +78,6 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     hexHash: new Nilsimsa(event.content).digest('hex')
   }
 
-  await trackSentMessage(messageToCache)
-
   // IMPORTANT: Run this concurrently
   void scanURLs(messageToCache, guild).then(urlResult => {
     if (urlResult) {
@@ -101,6 +99,8 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
 
     return
   }
+
+  await trackSentMessage(messageToCache)
 
   const settings = await prisma.crossChannelAntiSpamSettings.findFirst({
     orderBy: {
