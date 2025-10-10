@@ -42,11 +42,20 @@ To further empower the system's detection capabilities, the bot supports configu
 
 ### Rapid-deployment regex filters
 
-Silver Mullet supports adding simple regex filters with slash commands, enabling speedy deployment of filters even from mobile clients, thus permitting rapid response to emerging spam incidents. In contrast to general-purpose systems like Zeppelin, the system is un-granular by design, featuring a dead-simple "match = ban" pattern in order to maximally shorten time to response from the staff team during an active situation.
+Silver Mullet supports adding simple regex filters with slash commands, enabling speedy deployment of filters even from mobile clients, thus permitting rapid response to emerging spam incidents. In contrast to general-purpose systems like Zeppelin, filters can be added on the fly taking whatever action is required. Filters can mute (through the timeout feature), kick, ban, or queue up a kick/ban for moderator approval.
 
 In addition to the typical "send message and filter" style, we also listen for automod events from Discord, and put the blocked content through
 the filter set. This was we get all the power and simplicity of regular filters, with the otherwise unachievable feature of blocking content before it reaches clients.
 
+### Suspicious reactivation
+
+Silver Mullet has the ability to track and take action on members that have 'suspiciously reactivated' their accounts. More accurately, each regex filter (above) can have an optional 'days since last activity' field added, which will make the filter only trip if the account has been inactive for more than the threshold. This is calculated by tracking when each member last sent a message (or, in the case that no entry exists, their join date).
+
+The target for this system is attacks that follow no discernible pattern (for example, the '4-image Mr Beast' scam), and are thus extremely difficult to catch with our normal filters.
+CCAS is able to detect these but a primary motivator for this solution is to have more layers of defence, and to reduce the TTB (time to ban).
+By reducing the amount of messages sent into the server, we can can reduce unnecessary Hammer pings.
+
+Since this is a bolt-on to filters, this feature can take advantage of the fully customisable nature of filters, described above.
 
 ## Development
 
