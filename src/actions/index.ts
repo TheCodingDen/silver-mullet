@@ -40,20 +40,20 @@ export const REMOVAL_OPTIONS = {
     },
     message: (guild: Guild) =>
 `You have been banned from ${guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.
-If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
+If you are not aware of having performed any action that may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   },
   kick: {
     opts: 'Filter triggered.',
     message: (guild: Guild) =>
 `You have been kicked from ${guild.name} due to spam. You can appeal at <https://tcd.one/appeal>.
-If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
+If you are not aware of having performed any action that may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   },
   mute: {
     opts: {
-      duration: 5 * 1000 * 60,
+      duration: 5 * 1000 * 60, // 5 minutes
       reason: 'Spam detected.'
     },
     message: (guild: Guild) =>
-`You have been muted in ${guild.name} due to spam. If you are not aware of what may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
+`You have been muted in ${guild.name} due to spam. If you are not aware of having performed any action that may have caused this, your account is likely compromised. See <https://discord.com/safety/360044104071-Tips-against-spam-and-hacking#title-3> for steps to secure your account.`
   }
 }
