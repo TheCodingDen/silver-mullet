@@ -2,9 +2,8 @@ import { AutoModerationActionExecution, AutoModerationActionType } from 'discord
 import { addMessage } from '../cache/op'
 import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
-import { actionFilterHit, actionURLHit } from '../actions'
+import { actionFilterHit } from '../actions'
 import { executeFilterDetection } from '../detection/filter-detection'
-import { scanURLs } from '../detection/url-scan'
 import { trackSentMessage } from '../tracking/last-message'
 import { shouldIgnoreMessage } from '../utils/ignore'
 import Nilsimsa from '../vendor/nilsimsa'
@@ -77,14 +76,6 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     content: event.content,
     hexHash: new Nilsimsa(event.content).digest('hex')
   }
-
-  // IMPORTANT: Run this concurrently
-  void scanURLs(messageToCache, guild).then(urlResult => {
-    if (urlResult) {
-      logger.info(`Got a hit on URLs ${urlResult.trippedURLs.map(url => url.url).join(', ')}`)
-      void actionURLHit(urlResult, member)
-    }
-  })
 
   const filterResult = await executeFilterDetection(messageToCache, member, guild)
   if (filterResult) {
