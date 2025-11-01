@@ -47,6 +47,7 @@ export interface ReactivationDetectionResult extends DetectionResultBase {
   message: CachedMessage
   member: GuildMember
   guild: Guild
+  trippedFilter: Filter
 }
 
 export type DetectionResult = SpamDetectionResult | FilterDetectionResult | URLDetectionResult | ReactivationDetectionResult
