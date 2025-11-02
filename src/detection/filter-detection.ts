@@ -53,7 +53,8 @@ export async function executeFilterDetection (message: CachedMessage, author: Gu
             action: filter.action,
             guild,
             message,
-            lastSeen
+            lastSeen,
+            trippedFilter: filter
           }
         } else {
           logger.debug(`User ${author.id} failed reactivation. thresholdDate: ${threshold.toLocaleString()}, thresholdDays: ${filter.dayThreshold}`)

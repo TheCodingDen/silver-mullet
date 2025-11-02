@@ -178,6 +178,8 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
 }
 
 function makeReactivationDefaultEmbed (message: TriggeringMessage, result: ReactivationDetectionResult): APIEmbed {
+  const { lastSeen, action, trippedFilter } = result
+
   return {
     ...embedBase(),
     title: 'Suspicious reactivation detected',
@@ -188,14 +190,18 @@ function makeReactivationDefaultEmbed (message: TriggeringMessage, result: React
     },
     description: `
           **Joined**: ${message.author.joinedAt?.toLocaleString()}
-          **Last seen**: ${result.lastSeen?.lastMessageDate.toLocaleString() ?? 'none'}
+          **Last seen**: ${lastSeen?.lastMessageDate.toLocaleString() ?? 'none'}
+          **Inactivity threshold**: ${trippedFilter.dayThreshold} days
     
           **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`
 ${message.content.trimStart().trimEnd() || '<no-content>'}
           \`\`\`
           **Action taken**:
-          \`${result.action}\`
+          \`${action}\`
+
+          **Filter**:
+          \`/${trippedFilter.regex}/${trippedFilter.flags}\`
         `
   }
 }
