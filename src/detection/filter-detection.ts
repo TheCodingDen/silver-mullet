@@ -4,7 +4,12 @@ import { CachedMessage } from '../clients/redis'
 import { Guild, GuildMember } from 'discord.js'
 import { FilterDetectionResult, ReactivationDetectionResult } from './types'
 
-export async function executeFilterDetection (message: CachedMessage, author: GuildMember, guild: Guild): Promise<FilterDetectionResult | ReactivationDetectionResult | undefined> {
+export async function executeFilterDetection (
+  message: CachedMessage,
+  oldMessage: CachedMessage | undefined,
+  author: GuildMember,
+  guild: Guild
+): Promise<FilterDetectionResult | ReactivationDetectionResult | undefined> {
   const filters = await prisma.filter.findMany({
     where: {
       guildID: guild.id
@@ -65,6 +70,7 @@ export async function executeFilterDetection (message: CachedMessage, author: Gu
           action: filter.action,
           trippedFilter: filter,
           message,
+          oldMessage,
           guild,
           author
         }

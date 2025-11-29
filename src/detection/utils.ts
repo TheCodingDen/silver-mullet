@@ -251,7 +251,11 @@ function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetec
           **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`
 ${message.content.trimStart().trimEnd() || '<no-content>'}
-          \`\`\` 
+          \`\`\`
+          **Previous content**:
+          \`\`\`
+${result.oldMessage?.content.trimStart().trimEnd() ?? '<unchanged>'}
+          \`\`\`           
           **Action taken**:
           \`${action}\`
 

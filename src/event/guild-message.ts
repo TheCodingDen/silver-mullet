@@ -74,7 +74,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, member, message.guild)
+  const filterResult = await executeFilterDetection(messageToCache, undefined, member, message.guild)
   if (filterResult) {
     const actionResult = await actionFilterHit(filterResult, member)
     if (actionResult.success) {
