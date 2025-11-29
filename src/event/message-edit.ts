@@ -7,8 +7,11 @@ import Nilsimsa from '../vendor/nilsimsa'
 
 export async function onMessageEdit (
   oldMessage: Message | PartialMessage,
-  newMessage: Message
+  _newMessage: Message | PartialMessage
 ): Promise<void> {
+  // D.js is a serious library, so we must fetch the message ourselves. Don't fetch the old one because it can't exist.
+  const newMessage = await _newMessage.fetch()
+
   if (newMessage.author.bot || newMessage.channel.isDMBased() || !newMessage.inGuild()) {
     return
   }
