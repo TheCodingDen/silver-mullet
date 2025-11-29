@@ -3,7 +3,6 @@ import prisma from '../clients/prisma'
 import { CachedMessage } from '../clients/redis'
 import { actionFilterHit } from '../actions'
 import { executeFilterDetection } from '../detection/filter-detection'
-import { trackSentMessage } from '../tracking/last-message'
 import Nilsimsa from '../vendor/nilsimsa'
 
 export async function onMessageEdit (
@@ -74,10 +73,9 @@ export async function onMessageEdit (
   const filterResult = await executeFilterDetection(messageToCache, oldMessageCached, member, newMessage.guild)
   if (filterResult) {
     logger.debug(`User ${newMessage.author.id} hit filter ${JSON.stringify(filterResult, undefined, 2)}`)
+
     const actionResult = await actionFilterHit(filterResult, member)
-    if (actionResult.success) {
-      await trackSentMessage(messageToCache)
-    } else {
+    if (!actionResult.success) {
       logger.error(`User ${newMessage.author.id} hit filter ${JSON.stringify(filterResult, undefined, 2)} but it errored`)
     }
   }
