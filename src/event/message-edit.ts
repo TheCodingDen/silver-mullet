@@ -84,5 +84,5 @@ export async function onMessageEdit (
   }
 
   // Don't run CCAS (too expensive for little gain, also requires cache prodding)
-  // Don't run suspicious reactivation updates (real wonky technical stuff e.g letting users time travel by editing old messages)
+  // Don't update the LastSeen table (real wonky technical stuff e.g letting users time travel by editing old messages)
 }
