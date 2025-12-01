@@ -239,8 +239,8 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
   }
 }
 
-function checkExhaustive(_arg: never): never {
-  throw new Error("this case should never happen; please implement the missing conditional branch")
+function checkExhaustive (_arg: never): never {
+  throw new Error('this case should never happen; please implement the missing conditional branch')
 }
 
 export function makeDefaultEmbed (message: TriggeringMessage, result: DetectionResult): APIEmbed {
