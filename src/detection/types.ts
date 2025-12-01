@@ -6,7 +6,6 @@ import { CachedMessage } from '../clients/redis'
 export enum DetectionSource {
   FILTER = 'filter',
   SPAM = 'spam',
-  URL = 'url',
   REACTIVATION = 'reactivation'
 }
 
