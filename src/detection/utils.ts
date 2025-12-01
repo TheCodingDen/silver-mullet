@@ -9,6 +9,7 @@ import { RetryResult } from '../utils/retry'
 import { ActionFunction, TriggeringMessage } from '../actions'
 import { Comparison } from './spam-detection'
 import { DetectionResult, DetectionSource, FilterDetectionResult, SpamDetectionResult, ReactivationDetectionResult } from './types'
+import { checkExhaustive } from '../utils/type-checks'
 
 async function getChannel (guild: Guild, name: string, id: string | undefined): Promise<TextBasedChannel> {
   if (!id) {
@@ -237,10 +238,6 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
           \`/${trippedFilter.regex}/${trippedFilter.flags}\`
         `
   }
-}
-
-function checkExhaustive (_arg: never): never {
-  throw new Error('this case should never happen; please implement the missing conditional branch')
 }
 
 export function makeDefaultEmbed (message: TriggeringMessage, result: DetectionResult): APIEmbed {
