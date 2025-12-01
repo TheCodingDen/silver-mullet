@@ -29,6 +29,7 @@ export interface FilterDetectionResult extends DetectionResultBase {
   trippedFilter: Filter
   author: GuildMember
   message: CachedMessage
+  oldMessage: CachedMessage | undefined
   guild: Guild
 }
 

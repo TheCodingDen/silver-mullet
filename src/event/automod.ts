@@ -77,7 +77,7 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     hexHash: new Nilsimsa(event.content).digest('hex')
   }
 
-  const filterResult = await executeFilterDetection(messageToCache, member, guild)
+  const filterResult = await executeFilterDetection(messageToCache, undefined, member, guild)
   if (filterResult) {
     logger.debug(`User ${user.id} hit filter ${JSON.stringify(filterResult, undefined, 2)}`)
     const actionResult = await actionFilterHit(filterResult, member)

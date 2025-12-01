@@ -239,6 +239,15 @@ ${result.trippedURLs.map(showURL).join('\n\n').trimStart().trimEnd()}
 
 function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetectionResult): APIEmbed {
   const { action, trippedFilter } = result
+  const previousContent = result.oldMessage !== undefined
+    ? (`
+          **Previous content**:
+          \`\`\`
+${result.oldMessage.content.trimStart().trimEnd() ?? '<unchanged>'}
+          \`\`\`
+`)
+    : ''
+
   return {
     ...embedBase(),
     title: 'Filter triggered',
@@ -251,7 +260,8 @@ function makeFilterDefaultEmbed (message: TriggeringMessage, result: FilterDetec
           **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`
 ${message.content.trimStart().trimEnd() || '<no-content>'}
-          \`\`\` 
+          \`\`\`
+          ${previousContent}
           **Action taken**:
           \`${action}\`
 
