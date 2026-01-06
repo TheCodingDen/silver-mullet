@@ -66,7 +66,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
   }
 
   const attachments = [...message.attachments.values()]
-  const attachmentString = '\n' + attachments.map(a => a.url).join('\n')
+  const attachmentString = '\n------ Attachments ------\n' + attachments.map(a => a.url).join('\n')
 
   const messageToCache: CachedMessage = {
     messageId: message.id,
