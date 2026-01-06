@@ -65,12 +65,15 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
+  const attachments = [...message.attachments.values()]
+  const attachmentString = '\n' + attachments.map(a => a.url).join('\n')
+
   const messageToCache: CachedMessage = {
     messageId: message.id,
     guildId: message.guild.id,
     authorId: message.author.id,
     channelId: message.channel.id,
-    content: message.content,
+    content: message.content + attachmentString,
     hexHash: new Nilsimsa(message.content).digest('hex')
   }
 
