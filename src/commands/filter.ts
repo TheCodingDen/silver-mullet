@@ -139,13 +139,13 @@ export default class FilterCommand extends SlashCommand {
     if (allFilters.length === 0) {
       await ctx.send('No filters have been set.')
     } else {
-      await Promise.all(_.chunk(allFilters, 20).map(async filters => {
-        const content = filters
-          .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
+      for (const filterList of _.chunk(allFilters, 20)) {
+        const content = filterList
+          .map(f => `\`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
           .join('\n') || 'No filters set.'
 
         await ctx.send(content)
-      }))
+      }
     }
   }
 
