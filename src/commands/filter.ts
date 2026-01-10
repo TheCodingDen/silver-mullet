@@ -108,6 +108,7 @@ export default class FilterCommand extends SlashCommand {
 
         return filters
           .filter(option => humanLikely(input, likely, idToRegex[option.id]))
+          .slice(0, 25)
           .map(option => ({ name: `/${idToRegex[option.id]}/${option.flags}`, value: option.id }))
           .sort(alphabetical)
       }
@@ -138,11 +139,25 @@ export default class FilterCommand extends SlashCommand {
     if (allFilters.length === 0) {
       await ctx.send('No filters have been set.')
     } else {
-      const content = allFilters
-        .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
-        .join('\n') || 'No filters set.'
+      if (allFilters.length > 20) {
+        let content = allFilters
+          .slice(0, 20)
+          .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
+          .join('\n') || 'No filters set.'
 
-      await ctx.send(content)
+        await ctx.send(content)
+
+        content = allFilters
+          .slice(20, allFilters.length)
+          .map((f, i) => `${i + 20}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
+          .join('\n') || 'No filters set.'
+        await ctx.send(content)
+      } else {
+        const content = allFilters
+          .map((f, i) => `${i}: \`/${f.regex}/\` (${f.flags}) => ${f.action}${f.dayThreshold ? ` (${f.dayThreshold} day inactivity threshold)` : ''}`)
+          .join('\n') || 'No filters set.'
+        await ctx.send(content)
+      }
     }
   }
 
