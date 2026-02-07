@@ -177,7 +177,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     try {
       const promise = actionFn(member, {
         author: member,
-        content: messageToCache.content,
+        content: newContent,
         guild: message.guild,
         channel: message.channel
       }, antiSpamResult)
