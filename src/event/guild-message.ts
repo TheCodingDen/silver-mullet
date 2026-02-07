@@ -28,7 +28,13 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
-  const member = await message.guild.members.fetch(message.author.id)
+  let member
+  try {
+    member = await message.guild.members.fetch(message.author.id)
+  } catch (e) {
+    logger.error(`Could not fetch user ${message.author.id}:\n${errStack(e)}`)
+    return
+  }
 
   // Declare all conditions for the DB to check against
   // will search channels, categories, and roles.
@@ -66,15 +72,21 @@ export async function onGuildMessage (message: Message): Promise<void> {
   }
 
   const attachments = [...message.attachments.values()]
-  const attachmentString = `------ Attachments ------\n${attachments.map(a => a.url).join('\n')}`
+  let newContent
+  if (attachments.length > 0) {
+    const attachmentString = `------ Attachments ------\n${attachments.map(a => a.url).join('\n')}`
+    newContent = `${message.content}\n${attachmentString}`
+  } else {
+    newContent = message.content
+  }
 
   const messageToCache: CachedMessage = {
     messageId: message.id,
     guildId: message.guild.id,
     authorId: message.author.id,
     channelId: message.channel.id,
-    content: `${message.content}\n${attachmentString}`,
-    hexHash: new Nilsimsa(message.content).digest('hex')
+    content: newContent,
+    hexHash: new Nilsimsa(newContent).digest('hex')
   }
 
   const filterResult = await executeFilterDetection(messageToCache, undefined, member, message.guild)
@@ -165,7 +177,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     try {
       const promise = actionFn(member, {
         author: member,
-        content: message.content,
+        content: messageToCache.content,
         guild: message.guild,
         channel: message.channel
       }, antiSpamResult)
