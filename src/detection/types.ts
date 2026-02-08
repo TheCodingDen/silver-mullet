@@ -19,6 +19,7 @@ export interface SpamDetectionResult extends DetectionResultBase {
   averageSimilarity: number
   totalPoints: number
   comparisons: Comparison[]
+  pointsFromAttachments: number
 }
 
 export interface FilterDetectionResult extends DetectionResultBase {

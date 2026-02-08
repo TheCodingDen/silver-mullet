@@ -168,6 +168,7 @@ ${message.content.trimStart().trimEnd() || '<no-content>'}
               **Other messages (${cacheHitsToUse.length})**:
               Average similarity: __${averageSimilarityOfUsed.toPrecision(3)}__ 
               Total point count: __${totalPoints}__
+              Points from attachments: __${result.pointsFromAttachments}__
 
               ${cacheHitsToUse.map(formatCacheHit).join('\n\n')}
             `)

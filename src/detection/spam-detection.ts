@@ -72,7 +72,7 @@ export async function executeAntiSpamDetection (
 
   const { pointOverrides, actionMappings, maxSizeDiffPercentage, minMessageLength } = settings
 
-  if (postedContent.content.length < minMessageLength) {
+  if (postedContent.content.length < minMessageLength && postedContent.attachmentCount === 0) {
     return undefined
   }
 
@@ -85,7 +85,7 @@ export async function executeAntiSpamDetection (
   for (const message of cachedMessages) {
     // Require messages to be longer than the minimum
     // If they are not, do not consider them at all
-    if (postedContent.content.length < minMessageLength) {
+    if (message.content.length < minMessageLength && message.attachmentCount === 0) {
       continue
     }
 
@@ -123,7 +123,16 @@ export async function executeAntiSpamDetection (
         c.pointsFromMatches?.highestRankingMatch ?? c.pointsFromSimilarity?.pointsGained ?? 0
     )
 
-  const points = pointResults.reduce((acc, val) => acc + val, 0)
+  // Gain 1 point per attachment, but only for messages posted in other channels
+  // This means that you can't get banned for posting 5 attachments in the same channel
+  const pointsFromAttachments = cachedMessages
+    .filter(m => m.channelId !== postedContent.channelId)
+    .map(m => m.attachmentCount)
+    .reduce((acc, val) => acc + val, 0)
+
+  let points = pointResults.reduce((acc, val) => acc + val, 0)
+  points += pointsFromAttachments
+
   const actions = actionMappings.filter(a => points >= a.points).sort((a, b) => b.points - a.points)
   const chosenAction = actions[0]?.action
 
@@ -136,7 +145,8 @@ export async function executeAntiSpamDetection (
     action: chosenAction,
     averageSimilarity: computeAverageSimilarity(comparisons),
     totalPoints: points,
-    comparisons: filteredComparisons
+    comparisons: filteredComparisons,
+    pointsFromAttachments
   }
 }
 

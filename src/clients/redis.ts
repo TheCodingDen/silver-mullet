@@ -31,6 +31,7 @@ interface CachedMessageBase {
   channelId: string
   content: string
   hexHash: string
+  attachmentCount: number
 }
 
 export type CachedMessage = CachedMessageBase & Entity
@@ -81,7 +82,8 @@ export const messageSchema = new Schema(
     channelId: { type: 'string' },
     guildId: { type: 'string' },
     content: { type: 'text' },
-    hexHash: { type: 'string' }
+    hexHash: { type: 'string' },
+    attachmentCount: { type: 'number' }
   })
 )
 

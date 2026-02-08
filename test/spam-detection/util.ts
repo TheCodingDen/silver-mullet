@@ -10,6 +10,7 @@ export function newMessage (content: string): CachedMessage {
     authorId: DEFAULT_ID,
     channelId: DEFAULT_ID,
     content,
+    attachmentCount: 0,
     hexHash: new Nilsimsa(content).digest('hex')
   }
 }

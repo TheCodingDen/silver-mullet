@@ -7,6 +7,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
   "comparisons": [
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -15,6 +16,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -31,6 +33,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -39,6 +42,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -55,6 +59,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -63,6 +68,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -79,6 +85,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -87,6 +94,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -103,6 +111,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -111,6 +120,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -126,6 +136,7 @@ exports[`Quantity spam detects a mix of similar and identical messages as spam 1
       "similarityToPostedContent": 112,
     },
   ],
+  "pointsFromAttachments": 0,
   "source": "spam",
   "totalPoints": 5,
 }
@@ -138,6 +149,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
   "comparisons": [
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -146,6 +158,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -162,6 +175,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -170,6 +184,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -186,6 +201,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -194,6 +210,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -210,6 +227,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -218,6 +236,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -234,6 +253,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -242,6 +262,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -257,6 +278,7 @@ exports[`Quantity spam detects a series of identical messages as spam 1`] = `
       "similarityToPostedContent": 128,
     },
   ],
+  "pointsFromAttachments": 0,
   "source": "spam",
   "totalPoints": 5,
 }
@@ -269,6 +291,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
   "comparisons": [
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -277,6 +300,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -293,6 +317,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -301,6 +326,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -317,6 +343,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -325,6 +352,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -341,6 +369,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -349,6 +378,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -365,6 +395,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
     },
     {
       "comparedContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--2",
@@ -373,6 +404,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
         "messageId": "000000000000000000000",
       },
       "originalContent": {
+        "attachmentCount": 0,
         "authorId": "000000000000000000000",
         "channelId": "000000000000000000000",
         "content": "content--1",
@@ -388,6 +420,7 @@ exports[`Quantity spam detects a series of similar messages as spam 1`] = `
       "similarityToPostedContent": 112,
     },
   ],
+  "pointsFromAttachments": 0,
   "source": "spam",
   "totalPoints": 5,
 }

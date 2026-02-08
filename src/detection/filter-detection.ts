@@ -27,7 +27,9 @@ export async function executeFilterDetection (
     const regexp = new RegExp(filter.regex, filter.flags)
     const regexMatch = regexp.test(content)
 
-    logger.debug(`Regex match ${regexMatch} ${filter.regex}`)
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug(`Regex match ${regexMatch} ${filter.regex}`)
+    }
 
     if (regexMatch) {
       // This is a reactivation filter

@@ -74,7 +74,8 @@ export async function onAutomodHit (event: AutoModerationActionExecution): Promi
     authorId: user.id,
     channelId: channel.id,
     content: event.content,
-    hexHash: new Nilsimsa(event.content).digest('hex')
+    hexHash: new Nilsimsa(event.content).digest('hex'),
+    attachmentCount: 0
   }
 
   const filterResult = await executeFilterDetection(messageToCache, undefined, member, guild)

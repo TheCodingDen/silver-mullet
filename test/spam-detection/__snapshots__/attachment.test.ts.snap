@@ -1,0 +1,103 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Attachment detection attaches points to attachments 1`] = `
+{
+  "action": "BAN",
+  "averageSimilarity": 128,
+  "comparisons": [
+    {
+      "comparedContent": {
+        "attachmentCount": 4,
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000002",
+        "content": "",
+        "guildId": "000000000000000000000",
+        "hexHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "attachmentCount": 4,
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000001",
+        "content": "",
+        "guildId": "000000000000000000000",
+        "hexHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 80,
+      },
+      "similarityToPostedContent": 128,
+    },
+  ],
+  "pointsFromAttachments": 4,
+  "source": "spam",
+  "totalPoints": 5,
+}
+`;
+
+exports[`Attachment detection attaches points to attachments in lower quantities 1`] = `
+{
+  "action": "BAN",
+  "averageSimilarity": 128,
+  "comparisons": [
+    {
+      "comparedContent": {
+        "attachmentCount": 2,
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000002",
+        "content": "",
+        "guildId": "000000000000000000000",
+        "hexHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "attachmentCount": 2,
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000001",
+        "content": "",
+        "guildId": "000000000000000000000",
+        "hexHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 80,
+      },
+      "similarityToPostedContent": 128,
+    },
+    {
+      "comparedContent": {
+        "attachmentCount": 2,
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000002",
+        "content": "",
+        "guildId": "000000000000000000000",
+        "hexHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "messageId": "000000000000000000000",
+      },
+      "originalContent": {
+        "attachmentCount": 2,
+        "authorId": "000000000000000000000",
+        "channelId": "000000000000000000001",
+        "content": "",
+        "guildId": "000000000000000000000",
+        "hexHash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "messageId": "000000000000000000000",
+      },
+      "pointsFromMatches": undefined,
+      "pointsFromSimilarity": {
+        "pointsGained": 1,
+        "thresholdBroken": 80,
+      },
+      "similarityToPostedContent": 128,
+    },
+  ],
+  "pointsFromAttachments": 4,
+  "source": "spam",
+  "totalPoints": 6,
+}
+`;

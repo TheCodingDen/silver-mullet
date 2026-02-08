@@ -59,7 +59,8 @@ export async function onMessageEdit (
     authorId: newMessage.author.id,
     channelId: newMessage.channel.id,
     content: newMessage.content,
-    hexHash: new Nilsimsa(newMessage.content).digest('hex')
+    hexHash: new Nilsimsa(newMessage.content).digest('hex'),
+    attachmentCount: newMessage.attachments.size
   }
 
   // Some fields nullable due to the Partial but they will be unchanging so are taken from newMessage
@@ -70,7 +71,8 @@ export async function onMessageEdit (
     authorId: newMessage.author.id,
     channelId: newMessage.channel.id,
     content: oldContent,
-    hexHash: new Nilsimsa(oldContent).digest('hex')
+    hexHash: new Nilsimsa(oldContent).digest('hex'),
+    attachmentCount: oldMessage.attachments.size
   }
 
   const filterResult = await executeFilterDetection(messageToCache, oldMessageCached, member, newMessage.guild)

@@ -71,22 +71,14 @@ export async function onGuildMessage (message: Message): Promise<void> {
     return
   }
 
-  const attachments = [...message.attachments.values()]
-  let newContent
-  if (attachments.length > 0) {
-    const attachmentString = `------ Attachments ------\n${attachments.map(a => a.url).join('\n')}`
-    newContent = `${message.content}\n${attachmentString}`
-  } else {
-    newContent = message.content
-  }
-
   const messageToCache: CachedMessage = {
     messageId: message.id,
     guildId: message.guild.id,
     authorId: message.author.id,
     channelId: message.channel.id,
-    content: newContent,
-    hexHash: new Nilsimsa(newContent).digest('hex')
+    content: message.content,
+    hexHash: new Nilsimsa(message.content).digest('hex'),
+    attachmentCount: message.attachments.size
   }
 
   const filterResult = await executeFilterDetection(messageToCache, undefined, member, message.guild)
@@ -177,7 +169,7 @@ export async function onGuildMessage (message: Message): Promise<void> {
     try {
       const promise = actionFn(member, {
         author: member,
-        content: newContent,
+        content: message.content,
         guild: message.guild,
         channel: message.channel
       }, antiSpamResult)
