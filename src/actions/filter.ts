@@ -26,7 +26,8 @@ export async function actionFilterHit (hit: FilterDetectionResult | Reactivation
     author: member,
     channel,
     content: hit.message.content,
-    guild: member.guild
+    guild: member.guild,
+    attachmentCount: hit.message.attachmentCount
   }
 
   const actionToTake = hit.source === 'filter' ? hit.trippedFilter.action : hit.action

@@ -27,6 +27,7 @@ export interface TriggeringMessage {
   guild: Guild
   content: string
   channel: GuildTextBasedChannel
+  attachmentCount: number
 }
 
 // Timeout in millis. 5 minutes.
