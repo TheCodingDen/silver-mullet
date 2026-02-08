@@ -171,7 +171,8 @@ export async function onGuildMessage (message: Message): Promise<void> {
         author: member,
         content: message.content,
         guild: message.guild,
-        channel: message.channel
+        channel: message.channel,
+        attachmentCount: message.attachments.size
       }, antiSpamResult)
       actionPromises.set(member.id, promise)
       await promise

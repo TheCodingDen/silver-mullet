@@ -1,7 +1,7 @@
 import { ActionRowBuilder, APIEmbed, ButtonBuilder, ButtonStyle, Guild, Message, MessageCreateOptions, TextBasedChannel, User } from 'discord.js'
 import _ from 'lodash'
 import { addQueuedAction, fetchQueuedActionByAuthorId } from '../cache/op'
-import { ActionUpgrade } from '../clients/redis'
+import { ActionUpgrade, CachedMessage } from '../clients/redis'
 import { errStack } from '../utils'
 import color from '../utils/color'
 import { channelLink, embedBase } from '../utils/discordUtils'
@@ -121,7 +121,7 @@ function makeSpamDefaultEmbed (message: TriggeringMessage, result: SpamDetection
 
   const formatCacheHit = (c: Comparison): string => {
     const link = channelLink(c.comparedContent.channelId)
-    const content = _.truncate(c.comparedContent.content, { length: 30 }) || '<no-content>'
+    const content = getContent(c.comparedContent, 30)
     const { pointsFromMatches: matches, pointsFromSimilarity: similarity } = c
 
     let pointString
@@ -148,6 +148,20 @@ function makeSpamDefaultEmbed (message: TriggeringMessage, result: SpamDetection
     return `\`${content}\` (${link}):\n${pointString}`
   }
 
+  const getContent = (message: TriggeringMessage | CachedMessage, truncateTo?: number): string => {
+    const trimmed = message.content.trimStart().trimEnd()
+    if (trimmed.length === 0 && message.attachmentCount === 0) {
+      return '<no content>'
+    } else if (trimmed.length === 0 && message.attachmentCount > 0) {
+      return `<no content, ${message.attachmentCount} attachments>`
+    } else {
+      if (truncateTo !== undefined) {
+        return _.truncate(trimmed, { length: truncateTo })
+      }
+      return trimmed
+    }
+  }
+
   return {
     ...embedBase(),
     title: 'Spam detected',
@@ -159,7 +173,7 @@ function makeSpamDefaultEmbed (message: TriggeringMessage, result: SpamDetection
     description: `
           **Triggered in** (${channelLink(message.channel.id)}):
           \`\`\`
-${message.content.trimStart().trimEnd() || '<no-content>'}
+${getContent(message)}
           \`\`\` 
           **Action taken**:
           \`${action}\`
