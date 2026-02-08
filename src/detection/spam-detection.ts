@@ -85,7 +85,7 @@ export async function executeAntiSpamDetection (
   for (const message of cachedMessages) {
     // Require messages to be longer than the minimum
     // If they are not, do not consider them at all
-    if (postedContent.content.length < minMessageLength) {
+    if (message.content.length < minMessageLength && message.attachmentCount === 0) {
       continue
     }
 
