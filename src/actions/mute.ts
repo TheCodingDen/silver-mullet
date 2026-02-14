@@ -7,18 +7,23 @@ import { ActionFunction, REMOVAL_OPTIONS, ignoreFailedDeliver } from './'
 import { updateQueueMessage } from './utils'
 
 export const mute: ActionFunction = async (member, message, result) => {
-  const [muteResult, messageResult] = await Promise.all([
-    retryCallback(async () => await member.timeout(REMOVAL_OPTIONS.mute.opts.duration, REMOVAL_OPTIONS.mute.opts.reason), {
+  const messageResult = await retryCallback(
+    async () =>
+      await messageUser(member.user, {
+        content: REMOVAL_OPTIONS.mute.message(message.guild)
+      }),
+    {
       attempts: 3,
       errorPredicate: ignoreFailedDeliver
-    }),
-    retryCallback(async () => await messageUser(member.user, {
-      content: REMOVAL_OPTIONS.mute.message(member.guild)
-    }), {
-      attempts: 3,
-      errorPredicate: ignoreFailedDeliver
-    })
-  ])
+    }
+  )
+  const muteResult = await retryCallback(async () =>
+    await member.timeout(REMOVAL_OPTIONS.mute.opts.duration, REMOVAL_OPTIONS.mute.opts.reason),
+  {
+    attempts: 3,
+    errorPredicate: ignoreFailedDeliver
+  }
+  )
 
   handleRetryResult(muteResult, `When muting user ${member.user.username}`)
   handleRetryResult(messageResult, `When messaging muted user ${member.user.username}`)
