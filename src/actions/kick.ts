@@ -8,18 +8,20 @@ import { updateQueueMessage } from './utils'
 
 export const kick: ActionFunction = async (member, message, result) => {
   if (process.env.NODE_ENV === 'production') {
-    const [kickResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.kick(REMOVAL_OPTIONS.kick.opts), {
+    const messageResult = await retryCallback(
+      async () =>
+        await messageUser(member.user, {
+          content: REMOVAL_OPTIONS.kick.message(message.guild)
+        }),
+      {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
-      }),
-      retryCallback(async () => await messageUser(member.user, {
-        content: REMOVAL_OPTIONS.kick.message(member.guild)
-      }), {
-        attempts: 3,
-        errorPredicate: ignoreFailedDeliver
-      })
-    ])
+      }
+    )
+    const kickResult = await retryCallback(async () => await member.kick(REMOVAL_OPTIONS.kick.opts), {
+      attempts: 3,
+      errorPredicate: ignoreFailedDeliver
+    })
 
     handleRetryResult(kickResult, `When kicking user ${member.user.username}`)
     handleRetryResult(messageResult, `When messaging kicked user ${member.user.username}`)

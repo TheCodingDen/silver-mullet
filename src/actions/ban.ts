@@ -8,22 +8,20 @@ import { updateQueueMessage } from './utils'
 
 export const ban: ActionFunction = async (member, message, result) => {
   if (process.env.NODE_ENV === 'production') {
-    const [banResult, messageResult] = await Promise.all([
-      retryCallback(async () => await member.ban(REMOVAL_OPTIONS.ban.opts), {
+    const messageResult = await retryCallback(
+      async () =>
+        await messageUser(member.user, {
+          content: REMOVAL_OPTIONS.ban.message(message.guild)
+        }),
+      {
         attempts: 3,
         errorPredicate: ignoreFailedDeliver
-      }),
-      retryCallback(
-        async () =>
-          await messageUser(member.user, {
-            content: REMOVAL_OPTIONS.ban.message(message.guild)
-          }),
-        {
-          attempts: 3,
-          errorPredicate: ignoreFailedDeliver
-        }
-      )
-    ])
+      }
+    )
+    const banResult = await retryCallback(async () => await member.ban(REMOVAL_OPTIONS.ban.opts), {
+      attempts: 3,
+      errorPredicate: ignoreFailedDeliver
+    })
 
     handleRetryResult(banResult, `When banning user ${member.user.username}`)
     handleRetryResult(
