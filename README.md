@@ -2,6 +2,12 @@
 
 <img src="doc/logo.jpg" width="128px" height="auto">
 
+> [!WARNING]
+> SM is provided as-is with no support nor warranty. It was designed without much regard for use outside of TCD
+> so we cannot guarantee any functionality, stability, nor documentation on its implementation or usage.
+>
+> Here be dragons!
+
 *"Not all heroes wear capes; some of them wear terribly dated hockey haircuts."*
 
 Silver Mullet represents our third attempt at making our own, in-house automod bot. This bot is meant to be a lean, easy-to-develop, simplest-thing-that-works solution for automatic moderation, which simply patches in some of the gaps that cannot be fulfilled by either Zeppelin, Beemo or Discord's integrated automod. It is *not* supposed to be a solution to all of our problems at all times; it simply aims to solve some very specific problems in very specific ways, and do well in serving those narrow use cases.
@@ -22,15 +28,9 @@ With that in mind, Silver Mullet is backed by the following technologies:
 
 ## Features and technical execution
 
-> ⛔️ **Classified information ahead** ⛔️
->
-> Silver Mullet represents the most sophisticated anti-spam system ever deployed to TCD, and is on the cutting edge of technology even by general moderation bot standards. Like any anti-spam system, its effectiveness in no small part hinges on its configuration parameters and details of its technical execution being kept away from public eye.
->
-> Even with regard to the general confidentiality level of TCD staff operations, this bears stating separately: The following sections are highly classified information. **IT IS *STRICTLY FORBIDDEN* TO DISCLOSE ANY PARAMETERS, DETECTION ALGORITHMS, OR *ANY OTHER TECHNICAL DETAILS OF ANY SORT* ABOUT THIS SYSTEM OUTSIDE OF THE STAFF TEAM.**
->
-> The easiest way to ensure you do not disclose too much is to simply refuse to answer any questions about this system to the public, other than stating that it's our in-house anti-spam system (and nothing more).
-
 Silver Mullet's highlight features are largely inherited from its forebear, https://github.com/TheCodingDen/mini-slash, but it does have some ideas of its own as well, with the intent of adding more as time goes on. These will be detailed below.
+
+The configuration used in TCD is described in CONFIG.md
 
 ### Cross-Channel Anti-Spam (CCAS)
 
