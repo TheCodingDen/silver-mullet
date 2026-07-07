@@ -14,6 +14,12 @@
 <h2>silver-mullet</h2></div>
 <div class="tsd-panel tsd-typography"><a id="md:silver-mullet" class="tsd-anchor"></a><h1><a href="#md:silver-mullet">Silver Mullet</a></h1><img src="doc/logo.jpg" width="128px" height="auto">
 
+<blockquote>
+<p>[!WARNING]
+SM is provided as-is with no support nor warranty. It was designed without much regard for use outside of TCD
+so we cannot guarantee any functionality, stability, nor documentation on its implementation or usage.</p>
+<p>Here be dragons!</p>
+</blockquote>
 <p><em>&quot;Not all heroes wear capes; some of them wear terribly dated hockey haircuts.&quot;</em></p>
 <p>Silver Mullet represents our third attempt at making our own, in-house automod bot. This bot is meant to be a lean, easy-to-develop, simplest-thing-that-works solution for automatic moderation, which simply patches in some of the gaps that cannot be fulfilled by either Zeppelin, Beemo or Discord&#39;s integrated automod. It is <em>not</em> supposed to be a solution to all of our problems at all times; it simply aims to solve some very specific problems in very specific ways, and do well in serving those narrow use cases.</p>
 <p>In other words: <em>This is not a silver bullet, it&#39;s a silver mullet.</em></p>
@@ -27,13 +33,8 @@
 <li>discord.js with slash-create to interface with Discord</li>
 </ul>
 <p><em>* = well, as stable as it can be, considering Discord and discord.js are involved...</em></p>
-<a id="md:features-and-technical-execution" class="tsd-anchor"></a><h2><a href="#md:features-and-technical-execution">Features and technical execution</a></h2><blockquote>
-<p>⛔️ <strong>Classified information ahead</strong> ⛔️</p>
-<p>Silver Mullet represents the most sophisticated anti-spam system ever deployed to TCD, and is on the cutting edge of technology even by general moderation bot standards. Like any anti-spam system, its effectiveness in no small part hinges on its configuration parameters and details of its technical execution being kept away from public eye.</p>
-<p>Even with regard to the general confidentiality level of TCD staff operations, this bears stating separately: The following sections are highly classified information. <strong>IT IS <em>STRICTLY FORBIDDEN</em> TO DISCLOSE ANY PARAMETERS, DETECTION ALGORITHMS, OR <em>ANY OTHER TECHNICAL DETAILS OF ANY SORT</em> ABOUT THIS SYSTEM OUTSIDE OF THE STAFF TEAM.</strong></p>
-<p>The easiest way to ensure you do not disclose too much is to simply refuse to answer any questions about this system to the public, other than stating that it&#39;s our in-house anti-spam system (and nothing more).</p>
-</blockquote>
-<p>Silver Mullet&#39;s highlight features are largely inherited from its forebear, <a href="https://github.com/TheCodingDen/mini-slash">https://github.com/TheCodingDen/mini-slash</a>, but it does have some ideas of its own as well, with the intent of adding more as time goes on. These will be detailed below.</p>
+<a id="md:features-and-technical-execution" class="tsd-anchor"></a><h2><a href="#md:features-and-technical-execution">Features and technical execution</a></h2><p>Silver Mullet&#39;s highlight features are largely inherited from its forebear, <a href="https://github.com/TheCodingDen/mini-slash">https://github.com/TheCodingDen/mini-slash</a>, but it does have some ideas of its own as well, with the intent of adding more as time goes on. These will be detailed below.</p>
+<p>The configuration used in TCD is described in CONFIG.md</p>
 <a id="md:cross-channel-anti-spam-ccas" class="tsd-anchor"></a><h3><a href="#md:cross-channel-anti-spam-ccas">Cross-Channel Anti-Spam (CCAS)</a></h3><p>Silver Mullet&#39;s flagship feature is Cross-Channel Anti-Spam (CCAS), which uses <a href="https://en.wikipedia.org/wiki/Nilsimsa_Hash">Nilsimsa hashing</a> to first and foremost enable fuzzy comparison of messages based on broad-strokes similarity, not just absolute equality. This is in an effort to dodge typical antispam countermeasures sometimes deployed by Discord spam malware, like random string addendums.</p>
 <p>However, its primary objective is to, by generating this hash for each message sent within the last ~5 minutes and looking through all hashes for a given user each time they send a message, enable the system to automatically detect and shut down spam being spread across multiple channels - something that is usually proliferated by humans, and something most general-purpose automod systems are generally speaking powerless to defeat.</p>
 <p>To further empower the system&#39;s detection capabilities, the bot supports configuring keywords that, when present in a message, give it additional detection weight in order to trip CCAS detection sooner. This enables shutdown of misconduct that is difficult or outright impossible to accurately filter with simple contextless regex matching, such as phishing link spam, in as little as 2 messages.</p>
